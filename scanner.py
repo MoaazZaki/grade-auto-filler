@@ -32,19 +32,41 @@ class Scanner:
 
     Attributes
     ----------
-    says_str : str
-        a formatted string to print out what the animal says
-    name : str
-        the name of the animal
-    sound : str
-        the sound that the animal makes
-    num_legs : int
-        the number of legs the animal has (default 4)
-
+    img : np.ndarray
+        image to be scanned
+    original : np.ndarray
+        original copy of the image kept for visualizing
+    GAUSSIAN_SIZE : tuple
+        Window size of gaussian filter
+    CANNY_L_THRESH : int
+        Low threshold of canny edge detector
+    CANNY_H_THRESH : int
+        High threshold of canny edge detector
+    DILATION_SIZE : tuple
+        Element size of dilation
+    DILATION_ITERS : int
+        Number of dilations
+    EROSION_SIZE : tuple
+        Element size of erosion
+    EROSION_ITERS : int
+        Number of erosions
+    
     Methods
     -------
-    says(sound=None)
-        Prints the animals name and what sound it makes
+    get_edges()
+        return an image wiht edges of original
+
+    get_corners(edged)
+        return return the corners of the scanned paper
+
+    order_pts(pts)
+        return an ordered version of the corners (top-left,top-right,bottom-right,bottom-left)
+
+    get_dst_pts(rect)
+        return the new dimension points for the scanned image
+    
+    trnasform(visualize=True)
+        return the transfomed scanned paper
     """
 
     def __init__(self,img,GAUSSIAN_SIZE=(9,9),CANNY_L_THRESH=75,CANNY_H_THRESH=170,DILATION_SIZE=(5,5),DILATION_ITERS=5,EROSION_SIZE=(5,5),EROSION_ITERS=1):
@@ -77,14 +99,13 @@ class Scanner:
             peri = cv2.arcLength(c, True)
             approx = cv2.approxPolyDP(c, 0.02 * peri, True)
 
-            if len(approx) == 4:
+            if len(approx) >= 4:
                 corners = approx
                 break
         
         return corners
 
     def order_pts(self,pts):
-        #top-left,top-right,bottom-right, bottom-left
         rect_pts = np.zeros((4, 2), dtype = "float32")
         s = pts.sum(axis = 1)
         rect_pts[0] = pts[np.argmin(s)]
@@ -96,7 +117,6 @@ class Scanner:
         return rect_pts
 
     def get_dst_pts(self,rect):
-
         (tl, tr, br, bl) = rect
 
         widthA = np.sqrt(((br[0] - bl[0]) ** 2) + ((br[1] - bl[1]) ** 2))
@@ -134,10 +154,6 @@ class Scanner:
             plt.imshow(self.img)
             plt.figure(3)
             plt.imshow(transformed)
-            plt.show()
         return transformed
 
 
-img = cv2.imread('datasets/scanning/2.jpg')
-sc = Scanner(img)
-sc.trnasform()
