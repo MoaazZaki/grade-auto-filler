@@ -39,6 +39,7 @@ export default function GradesSheet() {
                 var formData = new FormData();
                 formData.append("files[]", imageFile);
                 try {
+                  console.log("hello");
                   setCsvURL(null);
                   res = await axios.post(
                     "/grades",

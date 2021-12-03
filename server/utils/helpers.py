@@ -29,40 +29,53 @@ def show_images(images,figure,titles=None):
     
 
 # cells_image= image returned from the CellDetector, finalboxes= cells,output_path=path of the csv file
-def output_csv(cells_image,finalboxes,output_path): 
+def output_csv(cells_image,finalboxes,output_path,cols_to_drop=[]): 
   #from every single image-based cell/box the strings are extracted via pytesseract and stored in a list
   outer=[]
+  codeImages=[]
   for i in range(len(finalboxes)):
       for j in range(len(finalboxes[i])):
           inner=''
-          if(len(finalboxes[i][j])==0):
-              outer.append(' ')
-          else:
-              for k in range(len(finalboxes[i][j])):
-                  x,y,w,h = finalboxes[i][j][k][0],finalboxes[i][j][k][1], finalboxes[i][j][k][2],finalboxes[i][j][k][3]
-                  finalimg = cells_image[ y:y+h,x:x +w]
-                  kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 1))
-                  border = cv2.copyMakeBorder(finalimg,2,2,2,2, cv2.BORDER_CONSTANT,value=[255,255])
-                  resizing = cv2.resize(border, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
-                  dilation = cv2.dilate(resizing, kernel,iterations=1)
-                  erosion = cv2.erode(dilation, kernel,iterations=2)
-                  
-                  out = pytesseract.image_to_string(erosion) if  not(j==1) else ""
-                  out=out.replace("\n","").replace("|","").replace("_","").replace("[","").strip()
-                  if(len(out)==0):
-                      out = pytesseract.image_to_string(erosion, config='--psm 3') if  not(j==1) else ""
-                      out=out.replace("\n","").replace("|","").replace("_","").replace("[","").strip()
+          if j not in cols_to_drop:
+            if(len(finalboxes[i][j])==0):
+                outer.append(' ')
+            else:
+                for k in range(len(finalboxes[i][j])):
+                    x,y,w,h = finalboxes[i][j][k][0],finalboxes[i][j][k][1], finalboxes[i][j][k][2],finalboxes[i][j][k][3]
+                    finalimg = cells_image[ y:y+h,x:x +w]
+                    cropHeight= int(0.1*finalimg.shape[0])
+                    cropWidth= int(0.03*finalimg.shape[1])
+                    finalimg=finalimg[cropHeight:-cropHeight,cropWidth:-cropWidth]
 
-                  inner = inner +" "+ out
-              outer.append(inner)
+                    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 1))
+                    border = cv2.copyMakeBorder(finalimg,2,2,2,2, cv2.BORDER_CONSTANT,value=[255,255])
+                    resizing = cv2.resize(border, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
+                    dilation = cv2.dilate(resizing, kernel,iterations=1)
+                    erosion = cv2.erode(dilation, kernel,iterations=2)
+
+                    #for debugging 
+                    if j==0:
+                      codeImages.append(erosion)
+                    #end of for debugging
+                    options = "outputbase digits"
+                    out = pytesseract.image_to_string(erosion,config=options) 
+                    # ,lang='eng',
+                    #   config='--psm 13 --oem 3 -c tessedit_char_whitelist=0123456789'
+                    out=out.replace("\n","").replace("|","").replace("_","").replace("[","").strip()
+                 
+                    inner = inner +" "+ out
+                outer.append(inner)
 
   #Creating a dataframe of the generated OCR list
   arr = np.array(outer)
-  dataframe = pd.DataFrame(arr.reshape(len(finalboxes), len(finalboxes[0])))
+  print("rows",len(finalboxes))
+  print("cols",len(finalboxes[0])-len(cols_to_drop))
+  print("cols",len(finalboxes[0]))
+  dataframe = pd.DataFrame(arr.reshape(len(finalboxes), len(finalboxes[0])-len(cols_to_drop)))
   dataframe.reset_index(drop=True, inplace=True)
   data = dataframe.style.set_properties(align="left")
   data.to_excel(output_path, index=False)
-
+  
 def removeShadow(img):
     rgb_planes = cv2.split(img)
     result_planes = []
