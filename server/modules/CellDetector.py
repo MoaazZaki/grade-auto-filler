@@ -10,7 +10,6 @@ except ImportError:
 import pytesseract
 pytesseract.pytesseract.tesseract_cmd = "C:\Program Files (x86)\Tesseract-OCR\\tesseract.exe" 
 
-
 class CellDetector:
     """
     Class used to take the scanned image and detect the cells of a table
@@ -86,8 +85,9 @@ class CellDetector:
       img_vh = cv2.erode(~img_vh, self.kernel, iterations=2)
       thresh, img_vh = cv2.threshold(img_vh,128,255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
       
-      bitxor = cv2.bitwise_xor(self.img,img_vh)
+      bitxor = cv2.bitwise_xor( cv2.bitwise_xor(self.img_bin,horizontal_lines),vertical_lines)
       bitnot = cv2.bitwise_not(bitxor)
+      # thresh,bitnot = cv2.threshold(bitnot,170,255,cv2.THRESH_BINARY |cv2.THRESH_OTSU)
 
       if self.visualize:
         #Plotting the generated image
@@ -164,4 +164,4 @@ class CellDetector:
               indexing = list(diff).index(minimum)
               lis[indexing].append(row[i][j])
           finalboxes.append(lis)
-      return finalboxes, bitnot # return the cells and an enhanced image
+      return finalboxes, bitnot # return the cells and an image without cell borders

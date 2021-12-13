@@ -8,6 +8,7 @@ import urllib.request
 from werkzeug.utils import secure_filename
 from flask_cors import CORS, cross_origin
 import cv2
+from datetime import datetime
 app = Flask(__name__)
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
@@ -56,7 +57,8 @@ def grade_sheets():
         resp.status_code = 500
         return resp
     if success:
-        output_csv_path=app.config['UPLOAD_FOLDER']+"output.xlsx"
+        now = datetime.now().isoformat().replace(".","").replace("-","").replace(":","")
+        output_csv_path=app.config['UPLOAD_FOLDER']+now+".xlsx"
         pipeLine(app.config['UPLOAD_FOLDER']+ filename,output_csv_path);
         resp = jsonify({'excelFile' : request.base_url.replace("grades","")+output_csv_path})
         resp.status_code = 201
@@ -70,6 +72,7 @@ if __name__ == '__main__':
     app.run(debug=True)
     
 def pipeLine(img_path,output_csv_path):
+    cols_to_drop=[1,2]
     img = cv2.imread(img_path)
     #remove the shadow
     img=hlp.removeShadow(img)
@@ -79,4 +82,4 @@ def pipeLine(img_path,output_csv_path):
     #detect the cells
     cellDetector=CellDetector(scanned)
     cells,cells_image=cellDetector.get_table_cells()
-    hlp.output_csv(cells_image,cells,output_csv_path)
+    hlp.output_csv(cells_image,cells,output_csv_path,cols_to_drop=cols_to_drop)
