@@ -26,10 +26,10 @@ def pipeLine(img_path,output_csv_path):
     hlp.output_csv(cells_image,cells,output_csv_path,cols_to_drop=cols_to_drop)
 
 
-img = cv2.imread('datasets/grade_papers/5.jpg')
+img = cv2.imread('datasets/grade_papers/6.jpg')
 plt.figure()
 plt.imshow(img)
 
-pipeLine('datasets/grade_papers/5.jpg','output/1.xlsx')
+pipeLine('datasets/grade_papers/6.jpg','output/2.xlsx')
 
 plt.show()

@@ -15,13 +15,13 @@ import pytesseract
 hw_model = HandwrittenDetector.classifier()
 #pytesseract.pytesseract.tesseract_cmd = "C:\Program Files (x86)\Tesseract-OCR\\tesseract.exe" 
 
-def show_images(images,figure,titles=None):
+def show_images(images,titles=None):
     #This function is used to show image(s) with titles by sending an array of images and an array of associated titles.
     # images[0] will be drawn with the title titles[0] if exists
     # You aren't required to understand this function, use it as-is.
     n_ims = len(images)
     if titles is None: titles = ['(%d)' % i for i in range(1,n_ims + 1)]
-    fig = plt.figure(figure)
+    fig = plt.figure()
     n = 1
     for image,title in zip(images,titles):
         a = fig.add_subplot(1,n_ims,n)
@@ -34,71 +34,94 @@ def show_images(images,figure,titles=None):
     
 
 # cells_image= image returned from the CellDetector, finalboxes= cells,output_path=path of the csv file
-def output_csv(cells_image,finalboxes,output_path,cols_to_drop=[]): 
-  #from every single image-based cell/box the strings are extracted via pytesseract and stored in a list
-  outer=[]
-  codeImages=[]
-  for i in range(len(finalboxes)):
-      for j in range(len(finalboxes[i])):
-          inner=''
-          if j not in cols_to_drop:
-            if(len(finalboxes[i][j])==0):
-                outer.append(' ')
-            else:
-                for k in range(len(finalboxes[i][j])):
-                    x,y,w,h = finalboxes[i][j][k][0],finalboxes[i][j][k][1], finalboxes[i][j][k][2],finalboxes[i][j][k][3]
-                    finalimg = cells_image[ y:y+h,x:x +w]
-                    cropHeight= int(0.1*finalimg.shape[0])
-                    cropWidth= int(0.03*finalimg.shape[1])
-                    finalimg=finalimg[cropHeight:-cropHeight,cropWidth:-cropWidth]
+def output_csv(cells_image,finalboxes,output_path,id_col=0,number_cols=[3],symbol_cols=[4],cols_to_drop=[]): 
 
-                    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 1))
-                    border = cv2.copyMakeBorder(finalimg,2,2,2,2, cv2.BORDER_CONSTANT,value=[255,255])
-                    resizing = cv2.resize(border, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
-                    dilation = cv2.dilate(resizing, kernel,iterations=1)
-                    erosion = cv2.erode(dilation, kernel,iterations=2)
-                    #for debugging 
-                    if j==0:
-                        #codeImages.append(erosion)
-                        #end of for debugging
-                        options = "outputbase digits"
-                        out = "1170353"#pytesseract.image_to_string(erosion,config=options) 
-                        # ,lang='eng',
-                        #   config='--psm 13 --oem 3 -c tessedit_char_whitelist=0123456789'
-                        out=out.replace("\n","").replace("|","").replace("_","").replace("[","").strip()
-                    
-                        inner = inner +" "+ out
-                    elif j==4 and i > 0:
+    enhance = lambda img: cv2.erode(cv2.dilate(cv2.resize(cv2.copyMakeBorder(img,2,2,2,2, cv2.BORDER_CONSTANT,value=[255,255]), None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC), cv2.getStructuringElement(cv2.MORPH_RECT, (2, 1)),iterations=1), cv2.getStructuringElement(cv2.MORPH_RECT, (2, 1)),iterations=2)
+
+    table = np.empty_like(finalboxes[:,:,0],dtype=object)
+
+    # ID COL
+    options = "outputbase digits"
+
+    table[1:,id_col] = out = "1170353"#[pytesseract.image_to_string(erosion,config=options)] 
+
+    # HAND-WRITTEN NUMBERS COL
+    for col in number_cols:
+        bbs = finalboxes[1:,col]
+        #show_images([cells_image[bb[1]:bb[1]+bb[3],bb[0]:bb[0]+bb[2]] for bb in bbs])
+        #show_images()
+        #print('BEFORE:',hw_model.predict([enhance(cells_image[bb[1]:bb[1]+bb[3],bb[0]:bb[0]+bb[2]]) for bb in bbs]))
+        table[1:,col] = hw_model.predict([cells_image[bb[1]:bb[1]+bb[3],bb[0]:bb[0]+bb[2]] for bb in bbs])
+
+    # SYMBOL COLS
+    class_to_symbol = lambda symbol,count: 't' if symbol == 'tick' else '?' if symbol == 'question_mark' else str(count) if symbol == 'v_line' else str(5-count) if symbol == 'h_line' else 's' if symbol == 'rect' else ' '
+
+    for col in symbol_cols:
+        bbs = finalboxes[1:,col]
+        show_images([cells_image[bb[1]:bb[1]+bb[3],bb[0]:bb[0]+bb[2]] for bb in bbs])
+        print([class_to_symbol(*SymbolDetector.classify_symbol(cells_image[bb[1]:bb[1]+bb[3],bb[0]:bb[0]+bb[2]][0])) for bb in bbs])
+        table[1:,col] = [class_to_symbol(*SymbolDetector.classify_symbol(cells_image[bb[1]:bb[1]+bb[3],bb[0]:bb[0]+bb[2]][0])) for bb in bbs]
+
+    #print(table)
+    # for i in range(len(finalboxes)):
+    #     for j in range(len(finalboxes[i])):
+    #         inner=''
+    #         if j not in cols_to_drop:
+    #             if(len(finalboxes[i][j])==0):
+    #                 outer.append(' ')
+    #             else:
+    #                 for k in range(len(finalboxes[i][j])):
+    #                     x,y,w,h = finalboxes[i][j][k][0],finalboxes[i][j][k][1], finalboxes[i][j][k][2],finalboxes[i][j][k][3]
+    #                     finalimg = cells_image[ y:y+h,x:x +w]
+    #                     cropHeight= int(0.1*finalimg.shape[0])
+    #                     cropWidth= int(0.03*finalimg.shape[1])
+    #                     finalimg=finalimg[cropHeight:-cropHeight,cropWidth:-cropWidth]
+
+                            
+
+    #                     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 1))
+    #                     border = cv2.copyMakeBorder(finalimg,2,2,2,2, cv2.BORDER_CONSTANT,value=[255,255])
+    #                     resizing = cv2.resize(border, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
+    #                     dilation = cv2.dilate(resizing, kernel,iterations=1)
+    #                     erosion = cv2.erode(dilation, kernel,iterations=2)
+    #                     #for debugging 
+    #                     if j==0:
+    #                         #codeImages.append(erosion)
+    #                         #end of for debugging
+    #                         options = "outputbase digits"
+    #                         out = "1170353"#pytesseract.image_to_string(erosion,config=options) 
+    #                         # ,lang='eng',
+    #                         #   config='--psm 13 --oem 3 -c tessedit_char_whitelist=0123456789'
+    #                         out=out.replace("\n","").replace("|","").replace("_","").replace("[","").strip()
                         
-                        out= str(1)
-                        out = str(hw_model.predict(erosion))
-                        # if :
-                        #     plt.figure()
-                        #     plt.imshow(erosion)
-                        #print(out)
-                        inner = inner +" "+ out
-                    elif j==5 and i > 0:
-                        # if i ==0:
-                        #     plt.figure()
-                        #     plt.imshow(erosion)
-                        #print('meow before')
-                        #plt.figure()
-                        #plt.imshow(erosion)
-                        symbol,count = SymbolDetector.classify_symbol(erosion)
-                        out = 't' if symbol == 'tick' else '?' if symbol == 'question_mark' else str(count) if symbol == 'v_line' else str(5-count) if symbol == 'h_line' else 's' if symbol == 'rect' else ' '
-                        print(out)
-                        inner = inner +" "+ out
-                outer.append(inner)
+    #                         inner = inner +" "+ out
+    #                     elif j==3 and i > 0:
+                            
+    #                         out= str(1)
+    #                         out = str(hw_model.predict(erosion))
+    #                         # if :
+    #                         #     plt.figure()
+    #                         #     plt.imshow(erosion)
+    #                         #print(out)
+    #                         inner = inner +" "+ out
+    #                     elif j==4 and i > 0:
+    #                         # if i ==0:
+    #                         #     plt.figure()
+    #                         #     plt.imshow(erosion)
+    #                         #print('meow before')
+    #                         #plt.figure()
+    #                         #plt.imshow(erosion)
+    #                         symbol,count = SymbolDetector.classify_symbol(erosion)
+    #                         out = 't' if symbol == 'tick' else '?' if symbol == 'question_mark' else str(count) if symbol == 'v_line' else str(5-count) if symbol == 'h_line' else 's' if symbol == 'rect' else ' '
+    #                         print(out)
+    #                         inner = inner +" "+ out
+    #                 outer.append(inner)
 
-  #Creating a dataframe of the generated OCR list
-  arr = np.array(outer)
-  print("rows",len(finalboxes))
-  print("cols",len(finalboxes[0])-len(cols_to_drop))
-  print("cols",len(finalboxes[0]))
-  dataframe = pd.DataFrame(arr.reshape(len(finalboxes), len(finalboxes[0])-len(cols_to_drop)))
-  dataframe.reset_index(drop=True, inplace=True)
-  data = dataframe.style.set_properties(align="left")
-  data.to_excel(output_path, index=False)
+    #Creating a dataframe of the generated OCR list
+    dataframe = pd.DataFrame(table)
+    dataframe.reset_index(drop=True, inplace=True)
+    data = dataframe.style.set_properties(align="left")
+    data.to_excel(output_path, index=False)
   
 def removeShadow(img):
     rgb_planes = cv2.split(img)

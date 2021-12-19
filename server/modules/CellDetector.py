@@ -49,24 +49,54 @@ class CellDetector:
       # A kernel of 2x2
       self.kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
 
-    def _sort_contours(self,cnts, method="left-to-right"):
-      # initialize the reverse flag and sort index
-      reverse = False
-      i = 0
-      # handle if we need to sort in reverse
-      if method == "right-to-left" or method == "bottom-to-top":
-          reverse = True
-      # handle if we are sorting against the y-coordinate rather than
-      # the x-coordinate of the bounding box
-      if method == "top-to-bottom" or method == "bottom-to-top":
-          i = 1
-      # construct the list of bounding boxes and sort them from top to
-      # bottom
+      if self.visualize:
+        #Plotting the generated image
+        plotting = plt.imshow(255-self.img_bin,cmap='gray')
+       
+
+    def _get_outlier_bounds(self,values):
+      Q1 = np.percentile(values, 25,
+                   interpolation = 'midpoint')
+ 
+      Q3 = np.percentile(values, 75,
+                   interpolation = 'midpoint')
+      IQR = Q3 - Q1
+
+      return (Q3+1.5*IQR) , (Q3-1.5*IQR) # upper,lower
+
+    def _sort_contours(self,cnts):
       boundingBoxes = [cv2.boundingRect(c) for c in cnts]
       (cnts, boundingBoxes) = zip(*sorted(zip(cnts, boundingBoxes),
-      key=lambda b:b[1][i], reverse=reverse))
+      key=lambda b:b[1][1]))
+
       # return the list of sorted contours and bounding boxes
-      return (cnts, boundingBoxes)
+      return (np.array(cnts,dtype=object), np.array(boundingBoxes))
+
+    def _correct_rows(self,rows,bounds,bounds_critertion=2,RELAXATION_CONSTANT=3):
+      correct_rows = [] # To store corrected rows
+      for row in rows:
+        indecies = [] # To keep track of correct cells in row
+        for bound in bounds:
+          i = 0
+          lower,upper = bound
+          while True:
+
+            # Check if the current cell meets bounds
+            if row[i][bounds_critertion] <= upper and row[i][bounds_critertion] >= lower and i not in indecies:
+              indecies.append(i)
+              break
+            
+            i+=1
+
+            # If current bound doesn't meet any cell relax the bounds a little
+            if i == len(row):
+              i = 0
+              lower -= RELAXATION_CONSTANT
+              upper += RELAXATION_CONSTANT
+        correct_rows.append(list(np.array(row)[indecies]))
+      
+      return correct_rows
+
 
 
     def get_table_cells(self):
@@ -74,9 +104,21 @@ class CellDetector:
       image_1 = cv2.erode(self.img_bin, self.ver_kernel, iterations=3)
       vertical_lines = cv2.dilate(image_1, self.ver_kernel, iterations=3)
 
+      if self.visualize:
+        #Plotting the generated image
+        plt.figure()
+        plotting = plt.imshow(vertical_lines,cmap='gray')
+       
+
       #Use horizontal kernel to detect and save the horizontal lines in a jpg
       image_2 = cv2.erode(self.img_bin, self.hor_kernel, iterations=3)
       horizontal_lines = cv2.dilate(image_2, self.hor_kernel, iterations=3)
+
+      if self.visualize:
+        #Plotting the generated image
+        plt.figure()
+        plotting = plt.imshow(horizontal_lines,cmap='gray')
+       
 
       # Combine horizontal and vertical lines in a new third image, with both having same weight.
       img_vh = cv2.addWeighted(vertical_lines, 0.5, horizontal_lines, 0.5, 0.0)
@@ -87,81 +129,76 @@ class CellDetector:
       
       bitxor = cv2.bitwise_xor( cv2.bitwise_xor(self.img_bin,horizontal_lines),vertical_lines)
       bitnot = cv2.bitwise_not(bitxor)
-      # thresh,bitnot = cv2.threshold(bitnot,170,255,cv2.THRESH_BINARY |cv2.THRESH_OTSU)
 
       if self.visualize:
         #Plotting the generated image
+        plt.figure()
         plotting = plt.imshow(img_vh,cmap='gray')
-        plt.show()
+       
 
       # Detect contours for following box detection
       contours, hierarchy = cv2.findContours(img_vh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
       # Sort all the contours by top to bottom.
-      contours, boundingBoxes = self._sort_contours(contours, method="top-to-bottom")
-      
-      #Creating a list of heights for all detected boxes
-      heights = [boundingBoxes[i][3] for i in range(len(boundingBoxes))]
-      #Get mean of heights
-      mean = np.mean(heights)
-      #Create list box to store all boxes in  
-      box = []
-      # Get position (x,y), width and height for every contour and show the contour on image
-      for c in contours:
-          x, y, w, h = cv2.boundingRect(c)
-          if (w<1000 and (h<500 and h>10)):
-              image = cv2.rectangle(self.img,(x,y),(x+w,y+h),(0,255,0),2)
-              box.append([x,y,w,h])
+      contours, boundingBoxes = self._sort_contours(contours)
 
+      # Filtering the noise lines
+      #upper_h,lower_h = self._get_outlier_bounds(boundingBoxes[:,-1])
+      upper_h,lower_h = 500,20
+      upper_w = 1000
+      mask = ((boundingBoxes[:,-1]<=upper_h) & (boundingBoxes[:,-1]>=lower_h)) & ( boundingBoxes[:,-2]< upper_w)
+      boundingBoxes = boundingBoxes[mask]
+      contours = contours[mask]
+      
+      # vis_img= np.ones_like(self.img)
+      # cv2.drawContours(vis_img, contours, -1, (0, 255, 0), 15)
+      # plt.figure(figsize=(15,15))
+      # plt.imshow(vis_img)
+
+      mean = np.mean(boundingBoxes[:,-1])
       #Creating two lists to define row and column in which cell is located
       row=[]
       column=[]
-      j=0
-
-      #Sorting the boxes to their respective row and column
-      for i in range(len(box)):    
+      columns_per_row = []
+      for i in range(len(boundingBoxes)):    
               
           if(i==0):
-              column.append(box[i])
-              previous=box[i]    
+              column.append(boundingBoxes[i])
+              previous=boundingBoxes[i]    
           
           else:
-              if(box[i][1]<=previous[1]+mean/2):
-                  column.append(box[i])
-                  previous=box[i]            
+              if(boundingBoxes[i][1]<=previous[1]+mean/2):
+                  column.append(boundingBoxes[i])
+                  previous=boundingBoxes[i]            
                   
-                  if(i==len(box)-1):
+                  if(i==len(boundingBoxes)-1):
                       row.append(column)        
-                  
+                      columns_per_row.append(len(column))
               else:
                   row.append(column)
+                  columns_per_row.append(len(column))
                   column=[]
-                  previous = box[i]
-                  column.append(box[i])
-                  
+                  previous = boundingBoxes[i]
+                  column.append(boundingBoxes[i])
 
-      #calculating maximum number of cells
-      countcol = 0
-      for i in range(len(row)):
-          countcol = len(row[i])
-          if countcol > countcol:
-              countcol = countcol
+      # Sorting columns from left to right
+      row = [sorted(r,key=lambda bb: bb[0]) for r in row]
+      
+      # Gettign the mode of number of columns for each row
+      from scipy.stats import mode
+      
+      columns_per_row = np.array(columns_per_row)
+      row = np.array(row,dtype=object)
+      columns_number = mode(columns_per_row)[0][0]
+      #print('columns_number= ',columns_number)
+      # Filtering The correct rows
+      wrong_rows_mask = columns_per_row != columns_number
+      correct_rows = np.array(list(row[~wrong_rows_mask]))
 
-      #Retrieving the center of each column
-      center = [int(row[i][j][0]+row[i][j][2]/2) for j in range(len(row[i])) if row[0]]
+      if np.sum(wrong_rows_mask) != 0:
+        # Getting width bounds for each column
+        columns_bounds = np.array([ self._get_outlier_bounds(correct_rows[:,j,-2]) for j in range(correct_rows.shape[1])])
+        # Correct and append wrong rows
+        correct_rows = np.vstack([correct_rows,np.array(self._correct_rows(list(row[wrong_rows_mask]),columns_bounds))])
 
-      center=np.array(center)
-      center.sort()
-      #Regarding the distance to the columns center, the boxes are arranged in respective order
 
-      finalboxes = []
-      for i in range(len(row)):
-          lis=[]
-          for k in range(countcol):
-              lis.append([])
-          for j in range(len(row[i])):
-              diff = abs(center-(row[i][j][0]+row[i][j][2]/4))
-              minimum = min(diff)
-              indexing = list(diff).index(minimum)
-              lis[indexing].append(row[i][j])
-          finalboxes.append(lis)
-      return finalboxes, bitnot # return the cells and an image without cell borders
+      return correct_rows, bitnot # return the cells and an enhanced image
