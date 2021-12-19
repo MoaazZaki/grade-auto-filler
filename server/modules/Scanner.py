@@ -125,13 +125,13 @@ class Scanner:
         transformed = cv2.warpPerspective(self.original, H, (int(transformed_corners[2][0]+1), int(transformed_corners[2][1]+1)))
 
         if visualize:
-            plt.figure(0)
+            plt.figure()
             plt.imshow(self.original)
-            plt.figure(1)
+            plt.figure()
             plt.imshow(edged)
             cv2.drawContours(self.img, [corners], -1, (0, 255, 0), 15)
-            plt.figure(2)
+            plt.figure()
             plt.imshow(self.img)
-            plt.figure(3)
+            plt.figure()
             plt.imshow(transformed)
         return transformed

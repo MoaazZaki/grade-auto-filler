@@ -59,7 +59,7 @@ def grade_sheets():
     if success:
         now = datetime.now().isoformat().replace(".","").replace("-","").replace(":","")
         output_csv_path=app.config['UPLOAD_FOLDER']+now+".xlsx"
-        pipeLine(app.config['UPLOAD_FOLDER']+ filename,output_csv_path);
+        pipeLine(app.config['UPLOAD_FOLDER']+ filename,output_csv_path)
         resp = jsonify({'excelFile' : request.base_url.replace("grades","")+output_csv_path})
         resp.status_code = 201
         return resp

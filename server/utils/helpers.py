@@ -3,12 +3,17 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import csv
+import sys
+sys.path.append('../modules')
+from modules import HandwrittenDetector
+from modules import SymbolDetector
 try:
     from PIL import Image
 except ImportError:
     import Image
 import pytesseract
-pytesseract.pytesseract.tesseract_cmd = "C:\Program Files (x86)\Tesseract-OCR\\tesseract.exe" 
+hw_model = HandwrittenDetector.classifier()
+#pytesseract.pytesseract.tesseract_cmd = "C:\Program Files (x86)\Tesseract-OCR\\tesseract.exe" 
 
 def show_images(images,figure,titles=None):
     #This function is used to show image(s) with titles by sending an array of images and an array of associated titles.
@@ -52,18 +57,37 @@ def output_csv(cells_image,finalboxes,output_path,cols_to_drop=[]):
                     resizing = cv2.resize(border, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
                     dilation = cv2.dilate(resizing, kernel,iterations=1)
                     erosion = cv2.erode(dilation, kernel,iterations=2)
-
                     #for debugging 
                     if j==0:
-                      codeImages.append(erosion)
-                    #end of for debugging
-                    options = "outputbase digits"
-                    out = pytesseract.image_to_string(erosion,config=options) 
-                    # ,lang='eng',
-                    #   config='--psm 13 --oem 3 -c tessedit_char_whitelist=0123456789'
-                    out=out.replace("\n","").replace("|","").replace("_","").replace("[","").strip()
-                 
-                    inner = inner +" "+ out
+                        #codeImages.append(erosion)
+                        #end of for debugging
+                        options = "outputbase digits"
+                        out = "1170353"#pytesseract.image_to_string(erosion,config=options) 
+                        # ,lang='eng',
+                        #   config='--psm 13 --oem 3 -c tessedit_char_whitelist=0123456789'
+                        out=out.replace("\n","").replace("|","").replace("_","").replace("[","").strip()
+                    
+                        inner = inner +" "+ out
+                    elif j==4 and i > 0:
+                        
+                        out= str(1)
+                        out = str(hw_model.predict(erosion))
+                        # if :
+                        #     plt.figure()
+                        #     plt.imshow(erosion)
+                        #print(out)
+                        inner = inner +" "+ out
+                    elif j==5 and i > 0:
+                        # if i ==0:
+                        #     plt.figure()
+                        #     plt.imshow(erosion)
+                        #print('meow before')
+                        #plt.figure()
+                        #plt.imshow(erosion)
+                        symbol,count = SymbolDetector.classify_symbol(erosion)
+                        out = 't' if symbol == 'tick' else '?' if symbol == 'question_mark' else str(count) if symbol == 'v_line' else str(5-count) if symbol == 'h_line' else 's' if symbol == 'rect' else ' '
+                        print(out)
+                        inner = inner +" "+ out
                 outer.append(inner)
 
   #Creating a dataframe of the generated OCR list

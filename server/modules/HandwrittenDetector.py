@@ -32,13 +32,12 @@ class classifier:
     
 
     def predict(self,X,method='knn',ocr_i=None):
-
         if method.upper() == 'KNN':
-            processed = np.array([ (cv2.resize(img, (28, 28))).astype(np.float32).reshape(28,28) for img in X])
+            processed = np.array([ (cv2.resize(img, (28, 28))).astype(np.float32).reshape(28,28) for img in [X]])
             processed = self.preprocess_reshaped(processed)
-
+            
             _,y_pred,_,_ = self.KNN.findNearest(processed.astype(np.float32),k=self.K) 
-            return y_pred
+            return y_pred[0][0]
 
         elif method.upper() == 'OCR':
             pass
@@ -62,9 +61,7 @@ class classifier:
 # 	if w >= 50 and (h >= 100 and h <= 800):
 # 		digit_bb.append([x, y, w, h])
 
-
 # digits = []
 # for bb in digit_bb:
 #     x,y,w,h = bb
 #     digits.append(gray[y:y+h,x:x+w])
-
