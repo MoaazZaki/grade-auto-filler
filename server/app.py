@@ -9,6 +9,8 @@ from werkzeug.utils import secure_filename
 from flask_cors import CORS, cross_origin
 import cv2
 from datetime import datetime
+from pipeLine import pipeLine
+
 app = Flask(__name__)
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
@@ -70,16 +72,3 @@ def grade_sheets():
  
 if __name__ == '__main__':
     app.run(debug=True)
-    
-def pipeLine(img_path,output_csv_path):
-    cols_to_drop=[1,2]
-    img = cv2.imread(img_path)
-    #remove the shadow
-    img=hlp.removeShadow(img)
-    #scan the image
-    sc = Scanner(img)
-    scanned = sc.trnasform(visualize=False)
-    #detect the cells
-    cellDetector=CellDetector(scanned)
-    cells,cells_image=cellDetector.get_table_cells()
-    hlp.output_csv(cells_image,cells,output_csv_path,cols_to_drop=cols_to_drop)

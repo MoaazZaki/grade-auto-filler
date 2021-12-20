@@ -5,6 +5,7 @@ import ImageUpload from "./ImageUpload";
 import axios from "axios";
 import Progress from "./Progress";
 import { Download, Done } from "@mui/icons-material";
+import CustomAlert from "./CustomAlert";
 
 axios.defaults.baseURL = process.env.REACT_APP_BASE_URL;
 
@@ -19,6 +20,7 @@ export default function GradesSheet() {
   const [csvURL, setCsvURL] = useState(null);
   const [percentCompleted, setPercentCompleted] = useState(null);
   const [imageFile, setImagefile] = useState(null);
+  const [openAlert, setOpenAlert] = React.useState(false);
   return (
     <div>
       <ImageUpload
@@ -74,6 +76,8 @@ export default function GradesSheet() {
                   setImageState(initialImageState);
                 } catch (err) {
                   console.log(err);
+                  setPercentCompleted(null);
+                  setOpenAlert(true);
                 }
               }}
               variant="contained"
@@ -113,6 +117,13 @@ export default function GradesSheet() {
           </Button>
         </Box>
       )}
+      <CustomAlert
+        message={
+          "Oops! Something went wrong from the server side :( Perhaps you could try another photo."
+        }
+        open={openAlert}
+        setOpen={setOpenAlert}
+      />
     </div>
   );
 }

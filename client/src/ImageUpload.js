@@ -3,6 +3,7 @@ import {
   Card,
   CardActionArea,
   CardContent,
+  CardMedia,
   Divider,
   Fab,
   Grid,
@@ -210,18 +211,23 @@ class ImageUploadCard extends React.Component {
   }
 
   renderUploadedState() {
-    const { classes } = this.props;
+    // const { classes } = this.props;
 
     return (
       <React.Fragment>
-        <CardActionArea sx={{ maxWidth: "600px" }} onClick={this.imageResetHandler}>
-          <img
-            width="100%"
-            className={classes.media}
-            src={this.props.imageState.selectedFile}
-            alt="broken"
-          />
-        </CardActionArea>
+        {/* <CardActionArea
+          sx={{ maxWidth: "95%", maxHeight: "500px" }}
+        >
+          <img width="100%" style={{ objectFit: "contain" }} className={classes.media} />
+        </CardActionArea> */}
+
+        <CardMedia
+          sx={{ margin: "0 auto", maxWidth: "95%", maxHeight: "500px" }}
+          component="img"
+          onClick={this.imageResetHandler}
+          alt="broken"
+          src={this.props.imageState.selectedFile ?? ""}
+        />
       </React.Fragment>
     );
   }
