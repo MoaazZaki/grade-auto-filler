@@ -201,4 +201,4 @@ class CellDetector:
         correct_rows = np.vstack([correct_rows,np.array(self._correct_rows(list(row[wrong_rows_mask]),columns_bounds))])
 
 
-      return correct_rows, bitnot # return the cells and an enhanced image
+      return np.hstack([sorted(correct_rows[:,col],key=lambda bb: bb[1]) for col in range(correct_rows.shape[1])]).reshape(correct_rows.shape[0],correct_rows.shape[1],4), bitnot # return the cells and an enhanced image

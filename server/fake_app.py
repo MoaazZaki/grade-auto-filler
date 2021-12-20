@@ -23,13 +23,13 @@ def pipeLine(img_path,output_csv_path):
     #detect the cells
     cellDetector=CellDetector(scanned,visualize=False)
     cells,cells_image=cellDetector.get_table_cells()
-    hlp.output_csv(cells_image,cells,output_csv_path,cols_to_drop=cols_to_drop)
+    hlp.output_csv(scanned.copy(),cells_image,cells,output_csv_path,cols_to_drop=cols_to_drop,symbol_cols=[4,5])
+
+
+pipeLine('datasets/grade_papers/6.jpg','output/2.xlsx')
 
 
 img = cv2.imread('datasets/grade_papers/6.jpg')
 plt.figure()
 plt.imshow(img)
-
-pipeLine('datasets/grade_papers/6.jpg','output/2.xlsx')
-
 plt.show()
