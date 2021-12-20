@@ -20,8 +20,8 @@ class classifier:
 
     def __init__(self,K=13,ocrs=[],PEXILS_PER_CELL=(12,12)):
 
-        X_train = np.load('../models/knn/X_train.npy',allow_pickle=True)
-        y_train = np.load('../models/knn/y_train.npy',allow_pickle=True)
+        X_train = np.load('models/knn/X_train.npy',allow_pickle=True)
+        y_train = np.load('models/knn/y_train.npy',allow_pickle=True)
         self.KNN = cv2.ml.KNearest_create()
         self.KNN.train(X_train.astype(np.float32), cv2.ml.ROW_SAMPLE, y_train)
         self.K = K
