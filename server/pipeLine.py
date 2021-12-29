@@ -38,7 +38,6 @@ def bubble_sheet_pipeline(folder_path,model_answer,answer_grades,ouput_exccel_pa
     bp = BubbleParser(ID_DIGITS_NUM,CHOICES_NUM,visualize=False)
     gr = Grader(CHOICES_NUM,WRONG_ANSWER_GRADE,IS_MULTI_ANSWER,model_answer,answer_grades)
 
-    dummy = 0
 
     for img_path in os.listdir(folder_path):
         img_path = '{}/{}'.format(folder_path,img_path)
@@ -52,7 +51,6 @@ def bubble_sheet_pipeline(folder_path,model_answer,answer_grades,ouput_exccel_pa
         edged = cv2.erode(edged,EROSION_SIZE,iterations=EROSION_ITERS)
 
         (ID,answer) = bp.extract(scanned,edged)
-        gr.add_grade('{},{}'.format(ID,dummy),answer)
-        dummy+=1
+        gr.add_grade(ID,answer)
     
     gr.save(ouput_exccel_path)
