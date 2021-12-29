@@ -115,7 +115,7 @@ class Scanner:
 
         return dst
     
-    def trnasform(self,visualize=True):
+    def trnasform(self,return_edged=False,visualize=True):
         
         edged = self.get_edges()
         corners = self.get_corners(edged)
@@ -134,4 +134,4 @@ class Scanner:
             plt.imshow(self.img)
             plt.figure()
             plt.imshow(transformed)
-        return transformed
+        return transformed if not return_edged else (transformed,edged)

@@ -19,7 +19,6 @@ def classify_symbol(symbol,  LINE_DISTANCE_THRESHOLD = 15,  LINE_ANGLE_THRESHOLD
   gray = cv2.cvtColor(symbol,cv2.COLOR_BGR2GRAY)
   blur = cv2.GaussianBlur(gray,(5,5),0)
   _,thresh =  cv2.threshold(blur, 150, 255,cv2.THRESH_BINARY_INV)
-  #thresh =  (symbol/255).astype(np.uint8)
 
   # find contours in the thresholded image, then initialize the
   # symbol contours lists
@@ -38,7 +37,6 @@ def classify_symbol(symbol,  LINE_DISTANCE_THRESHOLD = 15,  LINE_ANGLE_THRESHOLD
   tick_distances = 0
   tick_area = 0
   rectangles = 0
-  #horizontal_bb = 0
   vertical_bb = 0
   elipses = 0
   
@@ -76,11 +74,6 @@ def classify_symbol(symbol,  LINE_DISTANCE_THRESHOLD = 15,  LINE_ANGLE_THRESHOLD
 
       elipses += len(hough_ellipse(edged_symbol_part, accuracy=20, threshold=100,min_size=0, max_size=20))
 
-      #print(edged_symbol_part.shape)
-      
-      # tick_area += np.sum(symbol_part>0) / (symbol_part.shape[0]*symbol_part.shape[1])
-      # print(tick_area)
-      #horizontal_bb += 1 if (w/h) > 1+RECTANLE_BB_RATIO_ALLOWANCE else 0
       
 
 
@@ -99,10 +92,3 @@ def classify_symbol(symbol,  LINE_DISTANCE_THRESHOLD = 15,  LINE_ANGLE_THRESHOLD
   return 'empty',0
 
 
-
-
-# img = cv2.imread('datasets/symbols/1.jpeg')[100:190,260:320]
-# plt.figure()
-# plt.imshow(img)
-# print(classify_symbol(img))
-# plt.show()

@@ -9,11 +9,12 @@ from werkzeug.utils import secure_filename
 from flask_cors import CORS, cross_origin
 import cv2
 from datetime import datetime
+from modules.Grader import Grader
+from modules.BubbleParser import BubbleParser
 
 import matplotlib.pyplot as plt
 
-def pipeLine(img_path,output_csv_path):
-    cols_to_drop=[1,2]
+def grade_sheet_pipeline(img_path,output_csv_path,cols_to_drop=[1,2],symbol_cols=[4,5]):
     img = cv2.imread(img_path)
     #remove the shadow
     img=hlp.removeShadow(img)
@@ -23,4 +24,35 @@ def pipeLine(img_path,output_csv_path):
     #detect the cells
     cellDetector=CellDetector(scanned,visualize=False)
     cells,cells_image=cellDetector.get_table_cells()
-    hlp.output_csv(scanned.copy(),cells_image,cells,output_csv_path,cols_to_drop=cols_to_drop,symbol_cols=[4,5])
+    hlp.output_csv(scanned.copy(),cells_image,cells,output_csv_path,cols_to_drop=cols_to_drop,symbol_cols=symbol_cols)
+
+
+def bubble_sheet_pipeline(folder_path,model_answer,answer_grades,ouput_exccel_path,ID_DIGITS_NUM=7,CHOICES_NUM = 5,IS_MULTI_ANSWER = True,WRONG_ANSWER_GRADE = 2):
+    CANNY_L_THRESH=75
+    CANNY_H_THRESH=170
+    DILATION_SIZE=(5,5)
+    DILATION_ITERS=5
+    EROSION_SIZE=(5,5)
+    EROSION_ITERS=1
+
+    bp = BubbleParser(ID_DIGITS_NUM,CHOICES_NUM,visualize=False)
+    gr = Grader(CHOICES_NUM,WRONG_ANSWER_GRADE,IS_MULTI_ANSWER,model_answer,answer_grades)
+
+    dummy = 0
+
+    for img_path in os.listdir(folder_path):
+        img_path = '{}/{}'.format(folder_path,img_path)
+        img = cv2.imread(img_path)
+        sc = Scanner(img)
+
+        scanned = sc.trnasform(visualize=False)
+        gray = cv2.cvtColor(scanned, cv2.COLOR_BGR2GRAY)
+        edged = cv2.Canny(gray, CANNY_L_THRESH, CANNY_H_THRESH)
+        edged = cv2.dilate(edged,DILATION_SIZE,iterations=DILATION_ITERS)
+        edged = cv2.erode(edged,EROSION_SIZE,iterations=EROSION_ITERS)
+
+        (ID,answer) = bp.extract(scanned,edged)
+        gr.add_grade('{},{}'.format(ID,dummy),answer)
+        dummy+=1
+    
+    gr.save(ouput_exccel_path)
