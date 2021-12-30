@@ -1,4 +1,4 @@
-import { Done, Download } from "@mui/icons-material";
+import { Done, Download, PictureAsPdf } from "@mui/icons-material";
 import { Button, CircularProgress, Typography } from "@mui/material";
 import { Box } from "@mui/system";
 import axios from "axios";
@@ -22,6 +22,28 @@ export default function GradesSheet() {
   const [openAlert, setOpenAlert] = React.useState(false);
   return (
     <div>
+      <Typography py={2} color="GrayText">
+        <Button
+          onClick={() => {
+            //TODO change this to template image or pdf
+            window.open(`${process.env.REACT_APP_BASE_URL}/static/uploads/1.jpg`);
+          }}
+          color="error"
+          startIcon={<PictureAsPdf />}
+          variant="outlined"
+          sx={{
+            position: "absolute",
+            top: "20px",
+            right: "20px",
+            maxWidth: "120px",
+          }}
+        >
+          Grades sheet template
+        </Button>
+        {Boolean(imageState.imageUploaded)
+          ? "Thank you for uploading!"
+          : "Please upload the sheet you want to grade"}
+      </Typography>
       <ImageUpload
         Name="Input Image"
         imageState={imageState}
