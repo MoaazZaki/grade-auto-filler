@@ -220,8 +220,17 @@ class BubbleParser:
       correct_answer_rows.append(np.array(answer_rows[i]))
 
     col_x_start =  [[bb[0] for bb in row] for row in correct_answer_rows]
-    avg_cols_x_start = np.mean(correct_answer_rows,axis=0)
+    avgs_list = []
+    col_i = 0
+    for row in col_x_start:
+      while col_i < len(row):
+        avgs_list.append([])
+        col_i += 1
+      for i in range(len(row)):
+        avgs_list[i].append(row[i])
+    
 
+    avg_cols_x_start = [np.mean(col) for col in avgs_list]
     # Removing noisy bounding boxes by excluding the k largest differences from the closest column  (x value of bb - x value of the closest column) 
     for i in np.where(answers_wrong_rows_mask)[0]:
       bbs = np.array(answer_rows[i])
