@@ -4,6 +4,7 @@ import "./App.css";
 import { Button, Typography } from "@mui/material";
 import useRouter from "./hooks/useRouter";
 import GradesSheet from "./GradesSheet";
+import BubblesSheet from "./BubblesSheet";
 function App() {
   const router = useRouter();
   const tabs = [
@@ -32,7 +33,9 @@ function App() {
           </Button>
         ))}
       </div>
-      {router.query.tab && <div>{router.query.tab === "grades" ? <GradesSheet /> : null}</div>}
+      {router.query.tab && (
+        <div>{router.query.tab === "grades" ? <GradesSheet /> : <BubblesSheet />}</div>
+      )}
     </div>
   );
 }

@@ -1,11 +1,10 @@
+import { Done, Download } from "@mui/icons-material";
 import { Button, CircularProgress, Typography } from "@mui/material";
 import { Box } from "@mui/system";
-import React, { useState } from "react";
-import ImageUpload from "./ImageUpload";
 import axios from "axios";
-import Progress from "./Progress";
-import { Download, Done } from "@mui/icons-material";
+import React, { useState } from "react";
 import CustomAlert from "./CustomAlert";
+import ImageUpload from "./ImageUpload";
 
 axios.defaults.baseURL = process.env.REACT_APP_BASE_URL;
 
@@ -17,9 +16,9 @@ export default function GradesSheet() {
     searchURL: "",
   };
   const [imageState, setImageState] = useState(initialImageState);
+  const [imageFile, setImagefile] = useState(null);
   const [csvURL, setCsvURL] = useState(null);
   const [percentCompleted, setPercentCompleted] = useState(null);
-  const [imageFile, setImagefile] = useState(null);
   const [openAlert, setOpenAlert] = React.useState(false);
   return (
     <div>
