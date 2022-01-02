@@ -1,8 +1,7 @@
-import { Article, Grading, PictureAsPdf } from "@mui/icons-material";
+import { Article, Download, Grading, PictureAsPdf } from "@mui/icons-material";
 import {
   Button,
   Checkbox,
-  Chip,
   Container,
   FormControl,
   FormControlLabel,
@@ -17,9 +16,8 @@ import {
   Typography,
 } from "@mui/material";
 import axios from "axios";
-import React from "react";
+import React, { useState } from "react";
 import CustomAlert from "./CustomAlert";
-import ImageUpload from "./ImageUpload";
 axios.defaults.baseURL = process.env.REACT_APP_BASE_URL;
 
 export default function BubblesSheet() {
@@ -46,31 +44,23 @@ export default function BubblesSheet() {
     Array(numberOfQuestions).fill(0)
   );
 
-  //Image State
-  const initialImageState = {
-    mainState: "initial", // initial, search, gallery, uploaded
-    imageUploaded: 0,
-    selectedFile: null,
-    searchURL: "",
-  };
-  const [imageState, setImageState] = React.useState(initialImageState);
-  const [imageFile, setImagefile] = React.useState(null);
-
   //Some needed constants
   const choiceLetter = ["A", "B", "C", "D", "E"];
-  const choiceLetterLower = ["a", "b", "c", "d", "e"];
 
   //For error alerts
   const [openAlert, setOpenAlert] = React.useState(false);
   const [openAlertImageError, setOpenAlertImageError] = React.useState(false);
 
   //For outputing the final grade and paper
-  const [finalGrade, setFinalGrade] = React.useState(undefined);
+  const [finalGrades, setFinalGrades] = React.useState(undefined);
   const [finalPaper, setFinalPaper] = React.useState(undefined);
 
   //Loading state
   const [isLoadingGrade, setIsLoadingGrade] = React.useState(false);
   const [isLoadingPaper, setIsLoadingPaper] = React.useState(false);
+
+  //files uploaded
+  const [paperFiles, setPaperFiles] = useState([]);
 
   //check box choice
   const CheckBoxChoice = ({ index }) => {
@@ -117,6 +107,7 @@ export default function BubblesSheet() {
   //Effects
   React.useEffect(() => {
     setQuestionsRadioButtonChoices(Array(numberOfQuestions).fill(0));
+    setQuestionsQrades(Array(numberOfQuestions).fill(1));
     setQuestionsCheckBoxChoices(
       Array(numberOfQuestions)
         .fill(Array(numberOfChoices).fill(false))
@@ -228,6 +219,23 @@ export default function BubblesSheet() {
     />
   );
 
+  const NumberOfIdDigitsField = (
+    <FormControl fullWidth>
+      <InputLabel>Number of digits in the student's ID</InputLabel>
+      <Select
+        variant="standard"
+        onChange={(e) => setNumberOfIdDigits(+e.target.value)}
+        value={numberOfIdDigits}
+      >
+        {[1, 2, 3, 4, 5, 6, 7].map((el) => (
+          <MenuItem value={el} key={el}>
+            {el}
+          </MenuItem>
+        ))}
+      </Select>
+    </FormControl>
+  );
+
   return (
     <React.Fragment>
       <Container maxWidth="md" sx={{ paddingBlock: "32px" }}>
@@ -265,6 +273,9 @@ export default function BubblesSheet() {
               {NumberOfQuestionsField}
               {/* Number of choices  */}
               {NumberOfChoicesField}
+              {/* Number of id digits */}
+              {NumberOfIdDigitsField}
+
               {/* Wrong answer grade */}
               <TextField
                 label="Wrong answer grade"
@@ -315,34 +326,42 @@ export default function BubblesSheet() {
                   );
                 })}
               <Typography color="GrayText">
-                {Boolean(imageState.imageUploaded)
+                {Boolean(paperFiles?.length)
                   ? "Thank you for uploading!"
-                  : "Please upload the paper you want to grade"}
+                  : "Please upload the papers you want to grade"}
               </Typography>
-              <ImageUpload
-                Name="Input Image"
-                imageState={imageState}
-                setImageState={setImageState}
-                getTheImage={(image) => {
-                  setImagefile(image);
+
+              <input
+                type="file"
+                multiple
+                onChange={(e) => {
+                  setPaperFiles(e.target.files);
                 }}
               />
-              {finalGrade && (
-                <Typography my={2} fontWeight={700}>
-                  The grade is:{" "}
-                  <Chip color="secondary" size="large" label={finalGrade} component="span" />
-                </Typography>
+              {finalGrades && (
+                <Button
+                  onClick={() => {
+                    window.open(finalGrades);
+                  }}
+                  color="success"
+                  variant="outlined"
+                  startIcon={<Download />}
+                >
+                  Download grades
+                </Button>
               )}
               <Button
                 disabled={isLoadingGrade}
                 color={isLoadingGrade ? "inherit" : "primary"}
                 onClick={async (e) => {
+                  console.log(e.target.files);
                   e.preventDefault();
-                  if (!Boolean(imageState.imageUploaded)) return setOpenAlertImageError(true);
+                  if (!Boolean(paperFiles?.length)) return setOpenAlertImageError(true);
                   try {
                     setIsLoadingGrade(true);
                     var formData = new FormData();
                     formData.append("numberOfChoices", numberOfChoices);
+                    formData.append("numberOfIdDigits", numberOfIdDigits);
                     formData.append("numberOfQuestions", numberOfQuestions);
                     formData.append("wrongAnswerGrade", wrongAnswerGrade);
                     formData.append("allowMultiAnswers", allowMultiAnswers);
@@ -355,23 +374,25 @@ export default function BubblesSheet() {
                             questionsCheckBoxChoices.map((el) => {
                               const choicesL = [];
                               for (let i = 0; i < el.length; i++)
-                                if (el[i]) choicesL.push(choiceLetterLower[i]);
+                                if (el[i]) choicesL.push(choiceLetter[i]);
 
                               return choicesL?.length === 0
-                                ? choiceLetterLower[0] //if no choice slected default is 'a'
+                                ? choiceLetter[0] //if no choice slected default is 'a'
                                 : choicesL?.length === 1
                                 ? choicesL[0] //if only one choice selected make it a string
                                 : choicesL; //more than one value send it as array
                             })
                           )
-                        : JSON.stringify(
-                            questionsRadioButtonChoices.map((el) => choiceLetterLower[el])
-                          )
+                        : JSON.stringify(questionsRadioButtonChoices.map((el) => choiceLetter[el]))
                     );
-                    formData.append("files[]", imageFile);
+
+                    for (let i = 0; i < paperFiles.length; i++) {
+                      formData.append(`files[${i}]`, paperFiles[i]);
+                    }
+                    // formData.append("files[]", JSON.stringify(paperFiles));
 
                     const res = await axios.post("/bubble/grade", formData);
-                    setFinalGrade(res.data.grade);
+                    setFinalGrades(res.data.grades);
                   } catch (err) {
                     setOpenAlert(true);
                   } finally {
@@ -388,20 +409,7 @@ export default function BubblesSheet() {
             <Stack spacing={2}>
               {NumberOfQuestionsField}
               {NumberOfChoicesField}
-              <FormControl fullWidth>
-                <InputLabel>Number of digits in the student's ID</InputLabel>
-                <Select
-                  variant="standard"
-                  onChange={(e) => setNumberOfIdDigits(+e.target.value)}
-                  value={numberOfIdDigits}
-                >
-                  {[1, 2, 3, 4, 5, 6, 7].map((el) => (
-                    <MenuItem value={el} key={el}>
-                      {el}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              {NumberOfIdDigitsField}
               {finalPaper && (
                 <Button
                   onClick={() => {

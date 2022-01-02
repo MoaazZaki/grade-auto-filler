@@ -27,7 +27,10 @@ def grade_sheet_pipeline(img_path,output_csv_path,cols_to_drop=[1,2],symbol_cols
     hlp.output_csv(scanned.copy(),cells_image,cells,output_csv_path,cols_to_drop=cols_to_drop,symbol_cols=symbol_cols)
 
 
-def bubble_sheet_pipeline(folder_path,model_answer,answer_grades,ouput_exccel_path,ID_DIGITS_NUM=7,CHOICES_NUM = 5,IS_MULTI_ANSWER = True,WRONG_ANSWER_GRADE = 2):
+def bubble_sheet_pipeline(folder_path,model_answer,answer_grades,ouput_exccel_path,ID_DIGITS_NUM=7,CHOICES_NUM = 5,IS_MULTI_ANSWER = True,WRONG_ANSWER_GRADE = 2,ALLOW_NEGATIVE_GRADES=False):
+    
+    print(folder_path,model_answer,answer_grades,ouput_exccel_path,ID_DIGITS_NUM,CHOICES_NUM ,IS_MULTI_ANSWER ,WRONG_ANSWER_GRADE ,ALLOW_NEGATIVE_GRADES)
+    
     CANNY_L_THRESH=75
     CANNY_H_THRESH=170
     DILATION_SIZE=(5,5)
@@ -36,7 +39,7 @@ def bubble_sheet_pipeline(folder_path,model_answer,answer_grades,ouput_exccel_pa
     EROSION_ITERS=1
 
     bp = BubbleParser(ID_DIGITS_NUM,CHOICES_NUM,visualize=False)
-    gr = Grader(CHOICES_NUM,WRONG_ANSWER_GRADE,IS_MULTI_ANSWER,model_answer,answer_grades)
+    gr = Grader(CHOICES_NUM,WRONG_ANSWER_GRADE,IS_MULTI_ANSWER,model_answer,answer_grades,ALLOW_NEGATIVE_GRADES)
 
 
     for img_path in os.listdir(folder_path):

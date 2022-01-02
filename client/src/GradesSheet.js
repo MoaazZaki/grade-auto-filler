@@ -25,8 +25,7 @@ export default function GradesSheet() {
       <Typography py={2} color="GrayText">
         <Button
           onClick={() => {
-            //TODO change this to template image or pdf
-            window.open(`${process.env.REACT_APP_BASE_URL}/static/uploads/1.jpg`);
+            window.open(`${process.env.REACT_APP_BASE_URL}/static/uploads/template.pdf`);
           }}
           color="error"
           startIcon={<PictureAsPdf />}

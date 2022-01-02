@@ -85,11 +85,12 @@ def removeShadow(img):
     return result
 
 
-def generate_bubble_sheet(path_to_template,ID_DIGITS_NUM,QUESTIONS_NUMBER):
+# bb y1 y2 x1 x2
+def generate_bubble_sheet(path_to_template,ID_DIGITS_NUM,QUESTIONS_NUMBER,CHOICES_NUM):
 
-  img = cv2.imread(path_to_template)
+    img = cv2.imread(path_to_template)
 
-  id_bbs = [[295,400,220,1300],
+    id_bbs = [[295,400,220,1300],
             [400,500,220,1300],
             [500,600,220,1300],
             [600,700,220,1300],
@@ -97,7 +98,7 @@ def generate_bubble_sheet(path_to_template,ID_DIGITS_NUM,QUESTIONS_NUMBER):
             [800,900,220,1300],
             [900,1000,220,1300]]
 
-  answer_bbs = [[1220,1300,180,800],
+    answer_bbs = [[1220,1300,180,800],
                 [1350,1450,180,800],
                 [1500,1600,180,800],
                 [1650,1750,180,800],
@@ -145,14 +146,30 @@ def generate_bubble_sheet(path_to_template,ID_DIGITS_NUM,QUESTIONS_NUMBER):
                 [3080,3180,1610,2310],
                 [3230,3330,1610,2310],
                 ]
-  for i in range(-1,6 - ID_DIGITS_NUM,1):
-    img[id_bbs[5-i][0]:id_bbs[5-i][1],id_bbs[5-i][2]:id_bbs[5-i][3]] = 255
-  
 
-  for i in range(-1,44 - QUESTIONS_NUMBER,1):
-    img[answer_bbs[43-i][0]:answer_bbs[43-i][1],answer_bbs[43-i][2]:answer_bbs[43-i][3]] = 255
+    choices_bbs = [
+                    [[1200,3350,515,700],[1200,3350,1230,1540],[1200,3350,1950,2270]],
+                    [[1200,3350,600,740],[1200,3350,1320,1540],[1200,3350,2050,2270]],
+                    [[1200,3350,700,840],[1200,3350,1410,1540],[1200,3350,2150,2270]]
+    ]
+
+    print("ID_DIGITS_NUM: ",ID_DIGITS_NUM)
+    for i in range(-1,6 - ID_DIGITS_NUM,1):
+        img[id_bbs[5-i][0]:id_bbs[5-i][1],id_bbs[5-i][2]:id_bbs[5-i][3]] = 255
+
+    print("QUESTIONS_NUMBER: ",QUESTIONS_NUMBER)
+    for i in range(-1,44 - QUESTIONS_NUMBER,1):
+        img[answer_bbs[43-i][0]:answer_bbs[43-i][1],answer_bbs[43-i][2]:answer_bbs[43-i][3]] = 255
+
+    print("CHOICES_NUM: ",CHOICES_NUM)
+    for i in range(-1,4 - CHOICES_NUM,1):
+        for bb in choices_bbs[1-i]:
+            img[bb[0]:bb[1],bb[2]:bb[3]] = 255
   
-  return img
+    return img
+
+
+
 
 def to_pdf(img,path_to_output):
     from PIL import Image

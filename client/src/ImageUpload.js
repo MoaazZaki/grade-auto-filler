@@ -1,7 +1,7 @@
 //Tabs
+import { AddPhotoAlternate, Close, Search } from "@mui/icons-material";
 import {
   Card,
-  CardActionArea,
   CardContent,
   CardMedia,
   Divider,
@@ -11,9 +11,8 @@ import {
   InputBase,
   Paper,
 } from "@mui/material";
-import React from "react";
-import { Search, AddPhotoAlternate, Close } from "@mui/icons-material";
 import { withStyles } from "@mui/styles";
+import React from "react";
 
 const styles = (theme) => ({
   root: {
