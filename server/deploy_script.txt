@@ -1,0 +1,2 @@
+docker build --tag grade_app .
+docker run --rm -ti -p 5000:5000 grade_app

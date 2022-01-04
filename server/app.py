@@ -16,6 +16,8 @@ app = Flask(__name__)
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
 
+print('APP STARTED')
+
 UPLOAD_FOLDER = 'static/uploads/'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
@@ -25,7 +27,7 @@ ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'])
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
  
-@app.route('/')
+@app.route('/', methods=['GET','POST'])
 @cross_origin()
 def main():
     return 'Welcome to the Grades Auto Filler Server!'
@@ -101,12 +103,13 @@ def grade_sheets():
 @cross_origin()
 def generate_bubble_sheet():
     data=request.get_json()
+    print(data)
     # ex: {'numberOfChoices': 3, 'numberOfQuestions': 20, 'numberOfIdDigits': 5}
     now = datetime.now().isoformat().replace(".","").replace("-","").replace(":","")
     pdfName= now+".pdf" #TODO: change this to be dynamic
     pathToImage=app.config['UPLOAD_FOLDER'] #TODO: change this to a subfolder if you wish
     output_pdf_path=pathToImage+pdfName
-    hlp.to_pdf(hlp.generate_bubble_sheet('../datasets/MCQ/MCQ_paper.png',int(data["numberOfIdDigits"]),int(data["numberOfQuestions"]),int(data["numberOfChoices"])),output_pdf_path)
+    hlp.to_pdf(hlp.generate_bubble_sheet('static/assets/MCQ_paper.png',int(data["numberOfIdDigits"]),int(data["numberOfQuestions"]),int(data["numberOfChoices"])),output_pdf_path)
     #TODO: save the phote in pathToImage with a name of imageName
     resp = jsonify({'paper' : request.base_url.replace("bubble/paper","")+output_pdf_path})
     resp.status_code = 201
@@ -150,4 +153,4 @@ def grade_bubble_sheet():
     return savePhotos(request,sendBubbleSheetGrade,folder=gradesFolder) 
  
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0',port=5000,debug=True)
