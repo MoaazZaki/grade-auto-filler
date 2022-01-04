@@ -11,6 +11,8 @@ import cv2
 from datetime import datetime
 import pipeLine 
 import numpy as np
+import os
+
 
 app = Flask(__name__)
 cors = CORS(app)
@@ -153,4 +155,5 @@ def grade_bubble_sheet():
     return savePhotos(request,sendBubbleSheetGrade,folder=gradesFolder) 
  
 if __name__ == '__main__':
-    app.run(host='0.0.0.0',port=5000,debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0',port=port,debug=True)
