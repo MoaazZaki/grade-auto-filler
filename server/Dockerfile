@@ -12,6 +12,7 @@ RUN apt install -y tesseract-ocr
 RUN pip3 install numpy opencv-contrib-python
 RUN pip3 install -r requirements.txt
 RUN pip3 install pytesseract
+RUN pip3 install openpyxl
 
 EXPOSE 5000
 
