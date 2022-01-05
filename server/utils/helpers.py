@@ -7,10 +7,6 @@ import sys
 sys.path.append('../modules')
 from modules import HandwrittenDetector
 from modules import SymbolDetector
-try:
-    from PIL import Image
-except ImportError:
-    import Image
 import pytesseract
 hw_model = HandwrittenDetector.classifier()
 #pytesseract.pytesseract.tesseract_cmd = "C:\Program Files (x86)\Tesseract-OCR\\tesseract.exe" 
@@ -48,7 +44,7 @@ def output_csv(original,cells_image,finalboxes,output_path,id_col=0,number_cols=
     # ID COL
     options = "outputbase digits"
 
-    table[1:,id_col] = out = "1170353"#[pytesseract.image_to_string(erosion,config=options)] 
+    table[1:,id_col] = out = pytesseract.image_to_string(enhance(original),config=options)
 
     # HAND-WRITTEN NUMBERS COL
     for col in number_cols:
