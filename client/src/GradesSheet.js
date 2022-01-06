@@ -25,7 +25,7 @@ export default function GradesSheet() {
       <Typography py={2} color="GrayText">
         <Button
           onClick={() => {
-            window.open(`${process.env.REACT_APP_BASE_URL}/static/uploads/template.pdf`);
+            window.open(`${process.env.REACT_APP_BASE_URL}/static/uploads/template.pdf`, '_blank', 'noopener,noreferrer');
           }}
           color="error"
           startIcon={<PictureAsPdf />}
@@ -129,7 +129,7 @@ export default function GradesSheet() {
             color="success"
             variant="outlined"
             onClick={() => {
-              window.open(csvURL);
+              window.open(csvURL, '_blank', 'noopener,noreferrer');
             }}
             endIcon={<Download />}
           >

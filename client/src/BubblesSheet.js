@@ -341,7 +341,7 @@ export default function BubblesSheet() {
               {finalGrades && (
                 <Button
                   onClick={() => {
-                    window.open(finalGrades);
+                    window.open(finalGrades, '_blank', 'noopener,noreferrer'); 
                   }}
                   color="success"
                   variant="outlined"
@@ -413,7 +413,7 @@ export default function BubblesSheet() {
               {finalPaper && (
                 <Button
                   onClick={() => {
-                    window.open(finalPaper);
+                    window.open(finalPaper, '_blank', 'noopener,noreferrer');
                   }}
                   color="error"
                   variant="outlined"
