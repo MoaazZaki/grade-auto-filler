@@ -61,6 +61,8 @@ def output_csv(original,cells_image,finalboxes,output_path,id_col=0,number_cols=
     #Creating a dataframe of the generated OCR list
     dataframe = pd.DataFrame(table[1:,:], columns=['id' if i == 0 else i for i in range(table.shape[1])])
     dataframe.reset_index(drop=True,inplace=True)
+    dataframe = dataframe.applymap(lambda x: x.encode('unicode_escape').
+                 decode('utf-8') if isinstance(x, str) else x)
     dataframe.style.applymap(lambda val: 'background-color: {}; color:{}'.format('transparent' if val != '?' else 'red','black' if val != '?' else 'red')).\
             to_excel(output_path, engine='openpyxl')
   

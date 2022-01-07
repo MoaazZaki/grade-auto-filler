@@ -14,7 +14,7 @@ from modules.BubbleParser import BubbleParser
 
 import matplotlib.pyplot as plt
 
-def grade_sheet_pipeline(img_path,output_csv_path,cols_to_drop=[1,2],symbol_cols=[4,5]):
+def grade_sheet_pipeline(img_path,output_csv_path,numbers_col=[3],cols_to_drop=[1,2],symbol_cols=[4,5]):
     img = cv2.imread(img_path)
     #remove the shadow
     img=hlp.removeShadow(img)
@@ -24,7 +24,7 @@ def grade_sheet_pipeline(img_path,output_csv_path,cols_to_drop=[1,2],symbol_cols
     #detect the cells
     cellDetector=CellDetector(scanned,visualize=False)
     cells,cells_image=cellDetector.get_table_cells()
-    hlp.output_csv(scanned.copy(),cells_image,cells,output_csv_path,cols_to_drop=cols_to_drop,symbol_cols=symbol_cols)
+    hlp.output_csv(scanned.copy(),cells_image,cells,output_csv_path,number_col=numbers_col,cols_to_drop=cols_to_drop,symbol_cols=symbol_cols)
 
 
 def bubble_sheet_pipeline(folder_path,model_answer,answer_grades,ouput_exccel_path,ID_DIGITS_NUM=7,CHOICES_NUM = 5,IS_MULTI_ANSWER = True,WRONG_ANSWER_GRADE = 2,ALLOW_NEGATIVE_GRADES=False):
