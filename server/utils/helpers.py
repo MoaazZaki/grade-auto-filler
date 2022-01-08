@@ -9,6 +9,16 @@ from modules import HandwrittenDetector
 from modules import SymbolDetector
 import pytesseract
 hw_model = HandwrittenDetector.classifier()
+
+
+
+
+
+
+
+
+
+from re import sub
 #pytesseract.pytesseract.tesseract_cmd = "C:\Program Files (x86)\Tesseract-OCR\\tesseract.exe" 
 
 def show_images(images,titles=None):
@@ -37,29 +47,42 @@ def show_images(images,titles=None):
 
 # cells_image= image returned from the CellDetector, finalboxes= cells,output_path=path of the csv file
 def output_csv(original,cells_image,finalboxes,output_path,id_col=0,number_cols=[3],symbol_cols=[4],cols_to_drop=[]): 
+    #enhance = lambda img: cv2.erode(cv2.dilate(cv2.resize(cv2.copyMakeBorder(img,2,2,2,2, cv2.BORDER_CONSTANT,value=[255,255]), None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC), cv2.getStructuringElement(cv2.MORPH_RECT, (2, 1)),iterations=1), cv2.getStructuringElement(cv2.MORPH_RECT, (2, 1)),iterations=2)
+    enhance2 = lambda img: cv2.resize(cv2.copyMakeBorder(cv2.adaptiveThreshold(cv2.cvtColor(img, cv2.COLOR_BGR2GRAY),255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY, 21, 18),4,4,4,4, cv2.BORDER_CONSTANT,value=255), None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
+    enhance3 = lambda img: cv2.copyMakeBorder(cv2.threshold(cv2.resize(cv2.copyMakeBorder(cv2.adaptiveThreshold(cv2.cvtColor(img, cv2.COLOR_BGR2GRAY),255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY, 51, 10),4,4,4,4, cv2.BORDER_CONSTANT,value=255), None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC),0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)[1][15:-14,15:-14],5,5,5,5, cv2.BORDER_CONSTANT,value=255)#cv2.erode(cv2.dilate(, cv2.getStructuringElement(cv2.MORPH_RECT, (1, 3)),iterations=2)
+    #enhance2 = lambda img: cv2.threshold((cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)),0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)[1]
 
-    enhance = lambda img: cv2.erode(cv2.dilate(cv2.resize(cv2.copyMakeBorder(img,2,2,2,2, cv2.BORDER_CONSTANT,value=[255,255]), None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC), cv2.getStructuringElement(cv2.MORPH_RECT, (2, 1)),iterations=1), cv2.getStructuringElement(cv2.MORPH_RECT, (2, 1)),iterations=2)
     table = np.empty_like(finalboxes[:,:,0],dtype=object)
-
     # ID COL
     options = "outputbase digits"
-
-    table[1:,id_col] = out = pytesseract.image_to_string(enhance(original),config=options)
-
+    #cv2.imwrite('static/temp/cells.png',cells_image)
+    for i,bb in enumerate(finalboxes[:,id_col]):
+        pp_img = enhance2(original[bb[1]:bb[1]+bb[3],bb[0]:bb[0]+bb[2]])
+        #cv2.imwrite('static/temp/id{}.png'.format(i),pp_img)
+        out =pytesseract.image_to_string(pp_img,config=options)
+        out = sub('\D', '', out)
+        table[0+i,id_col] =  out
+    
     # HAND-WRITTEN NUMBERS COL
     for col in number_cols:
-        bbs = finalboxes[1:,col]
-        table[1:,col] = hw_model.predict([cells_image[bb[1]:bb[1]+bb[3],bb[0]:bb[0]+bb[2]] for bb in bbs])
+        bbs = finalboxes[:,col]
+        #[cv2.imwrite('static/temp/col{}digit{}.png'.format(col,i),cells_image[bb[1]:bb[1]+bb[3],bb[0]:bb[0]+bb[2]]) for i,bb in enumerate(bbs)]
+        table[0:,col] = hw_model.predict([cells_image[bb[1]:bb[1]+bb[3],bb[0]:bb[0]+bb[2]] for bb in bbs])
 
     # SYMBOL COLS
     class_to_symbol = lambda symbol,count: '5' if symbol == 'tick' else '?' if symbol == 'question_mark' else str(count) if symbol == 'v_line' else str(5-count) if symbol == 'h_line' else '0' if symbol == 'rect' else ' '
-
     for col in symbol_cols:
-        bbs = finalboxes[1:,col]
-        table[1:,col] = [class_to_symbol(*SymbolDetector.classify_symbol(original[bb[1]:bb[1]+bb[3],bb[0]:bb[0]+bb[2]])) for bb in bbs]
+        bbs = finalboxes[:,col]
+        #[cv2.imwrite('static/temp/col{}_symbol{}.png'.format(col,i),enhance3(original[bb[1]:bb[1]+bb[3],bb[0]:bb[0]+bb[2]])) for i,bb in enumerate(bbs)]
+        #print(SymbolDetector.classify_symbol(enhance3(original[bbs[0][1]:bbs[0][1]+bbs[0][3],bbs[0][0]:bbs[0][0]+bbs[0][2]])))
+        #raise Exception("meooooooow :'c")
+        out = [SymbolDetector.classify_symbol(enhance3(original[bb[1]:bb[1]+bb[3],bb[0]:bb[0]+bb[2]])) for bb in bbs]
+        #print(out)
+        out = [class_to_symbol(*o) for o in out]
+        table[:,col] = out
 
     #Creating a dataframe of the generated OCR list
-    dataframe = pd.DataFrame(table[1:,:], columns=['id' if i == 0 else i for i in range(table.shape[1])])
+    dataframe = pd.DataFrame(table, columns=['id' if i == 0 else i for i in range(table.shape[1])])
     dataframe.reset_index(drop=True,inplace=True)
     dataframe = dataframe.applymap(lambda x: x.encode('unicode_escape').
                  decode('utf-8') if isinstance(x, str) else x)

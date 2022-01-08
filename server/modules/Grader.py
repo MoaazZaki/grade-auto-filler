@@ -48,13 +48,15 @@ class Grader:
     self.IS_MULTI_ANSWER = IS_MULTI_ANSWER
     self.ALLOW_NEGATIVE_GRADES = ALLOW_NEGATIVE_GRADES
     self.model_answers = np.array(answers,dtype=object)
-    self.questions_grade = np.array(questions_grade)
+    self.questions_grade = np.array(questions_grade).astype(np.float16)
     self.QUESTIONS_NUMBER = len(answers)
     self.unknown_counter = 0
     self.students = {}
   
-  def calculate_grade(self,answers):   
-    # Assign 1 for each correct answer 
+  def calculate_grade(self,answers):  
+    #print(len(self.model_answers)) 
+    #print(len(np.array(answers,dtype=object)))
+    # Assign 1 for each correct answer
     points = (self.model_answers == np.array(answers,dtype=object)).astype(int)
     # Assign each correct answer its grade
     grades = points * self.questions_grade
@@ -73,7 +75,7 @@ class Grader:
   def add_grade(self,ID,answer):
     if ID not in self.students:
       self.students[ID] = self.calculate_grade(answer)
-    elif ID == 'COULD NOT DETECT' or ID == 'NOT FILLED':
+    elif ID == 'COULD NOT DETECT':
       self.students['{}: {}'.format(ID,self.unknown_counter)] = self.calculate_grade(answer)
       self.unknown_counter+=1
 

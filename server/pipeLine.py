@@ -21,15 +21,19 @@ def grade_sheet_pipeline(img_path,output_csv_path,numbers_col=[3],cols_to_drop=[
     #scan the image
     sc = Scanner(img)
     scanned = sc.trnasform(visualize=False)
+    #print(scanned.shape)
+    fixed_h = 500
+    height_percent = float(fixed_h) / scanned.shape[0] # W/H
+    scanned = cv2.resize(scanned,(int(scanned.shape[1]*height_percent),fixed_h),interpolation= cv2.INTER_CUBIC)
     #detect the cells
     cellDetector=CellDetector(scanned,visualize=False)
     cells,cells_image=cellDetector.get_table_cells()
-    hlp.output_csv(scanned.copy(),cells_image,cells,output_csv_path,number_col=numbers_col,cols_to_drop=cols_to_drop,symbol_cols=symbol_cols)
+    hlp.output_csv(scanned.copy(),cells_image,cells,output_csv_path,number_cols=numbers_col,cols_to_drop=cols_to_drop,symbol_cols=symbol_cols)
 
 
-def bubble_sheet_pipeline(folder_path,model_answer,answer_grades,ouput_exccel_path,ID_DIGITS_NUM=7,CHOICES_NUM = 5,IS_MULTI_ANSWER = True,WRONG_ANSWER_GRADE = 2,ALLOW_NEGATIVE_GRADES=False):
+def bubble_sheet_pipeline(folder_path,model_answer,answer_grades,ouput_exccel_path,ID_DIGITS_NUM,CHOICES_NUM ,IS_MULTI_ANSWER = True,WRONG_ANSWER_GRADE = 2,ALLOW_NEGATIVE_GRADES=False):
     
-    print(folder_path,model_answer,answer_grades,ouput_exccel_path,ID_DIGITS_NUM,CHOICES_NUM ,IS_MULTI_ANSWER ,WRONG_ANSWER_GRADE ,ALLOW_NEGATIVE_GRADES)
+    #print(folder_path,model_answer,answer_grades,ouput_exccel_path,ID_DIGITS_NUM,CHOICES_NUM ,IS_MULTI_ANSWER ,WRONG_ANSWER_GRADE ,ALLOW_NEGATIVE_GRADES)
     
     CANNY_L_THRESH=75
     CANNY_H_THRESH=170
@@ -48,6 +52,9 @@ def bubble_sheet_pipeline(folder_path,model_answer,answer_grades,ouput_exccel_pa
         sc = Scanner(img)
 
         scanned = sc.trnasform(visualize=False)
+        fixed_h = 1500
+        height_percent = float(fixed_h) / scanned.shape[0] # W/H
+        scanned = cv2.resize(scanned,(int(scanned.shape[1]*height_percent),fixed_h),interpolation= cv2.INTER_CUBIC)
         gray = cv2.cvtColor(scanned, cv2.COLOR_BGR2GRAY)
         edged = cv2.Canny(gray, CANNY_L_THRESH, CANNY_H_THRESH)
         edged = cv2.dilate(edged,DILATION_SIZE,iterations=DILATION_ITERS)
@@ -55,5 +62,7 @@ def bubble_sheet_pipeline(folder_path,model_answer,answer_grades,ouput_exccel_pa
 
         (ID,answer) = bp.extract(scanned,edged)
         gr.add_grade(ID,answer)
+
+        
     
     gr.save(ouput_exccel_path)

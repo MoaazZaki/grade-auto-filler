@@ -84,7 +84,7 @@ class BubbleParser:
     extract(img,edged)
         return ID and answers in the paper after perfoming the extraction pipeline
     """
-  def __init__(self,ID_DIGITS_NUM,CHOICES_NUM,ROW_Y_ALLOWANCE = 20,X_START_ALLOWANCE = 7,HOUGH_THRESHOLD=25,MIN_RADIUS =10,MAX_RADIUS=50,ANSWER_AREA_RATIO=0.85,ANSWER_THRESHOLD=165,IOU_MIN_RATIO=0.05,visualize=False):
+  def __init__(self,ID_DIGITS_NUM,CHOICES_NUM,ROW_Y_ALLOWANCE = 20,X_START_ALLOWANCE = 7,HOUGH_THRESHOLD=13,MIN_RADIUS =5,MAX_RADIUS=20,ID_AREA_RATIO=0.65,NOT_MULTI_MARGIN = 0.2,ANSWER_AREA_RATIO=0.65,ANSWER_THRESHOLD=165,IOU_MIN_RATIO=0.05,visualize=False):
     self.ID_DIGITS_NUM = ID_DIGITS_NUM
     self.CHOICES_NUM = CHOICES_NUM
     self.ROW_Y_ALLOWANCE = ROW_Y_ALLOWANCE
@@ -92,6 +92,8 @@ class BubbleParser:
     self.MIN_RADIUS = MIN_RADIUS
     self.MAX_RADIUS = MAX_RADIUS
     self.ANSWER_AREA_RATIO = ANSWER_AREA_RATIO
+    self.ID_AREA_RATIO =ID_AREA_RATIO
+    self.NOT_MULTI_MARGIN = NOT_MULTI_MARGIN
     self.ANSWER_THRESHOLD = ANSWER_THRESHOLD
     self.IOU_MIN_RATIO = IOU_MIN_RATIO
     self.HOUGH_THRESHOLD =HOUGH_THRESHOLD
@@ -130,7 +132,7 @@ class BubbleParser:
         if img_vis is not None:
           for pt in detected_circles[0, :]:
               a, b, r = pt[0], pt[1], pt[2]
-              cv2.circle(img_vis, (a, b), r, (0, 255, 0), 6)
+              cv2.circle(img_vis, (a, b), r, (0, 255, 0), 3)
 
           plt.figure(figsize=(20,20))
           plt.imshow(img_vis)
@@ -138,7 +140,8 @@ class BubbleParser:
     return detected_circles
 
 
-  def circles_to_bbs(self,detected_circles):
+  def circles_to_bbs(self,detected_circles,scanned):
+    #plt.show()
     # Function to check if value is in range [b1,b2]
     check_in_range = lambda value,b1,b2: value >= b1 and value <= b2
 
@@ -153,26 +156,32 @@ class BubbleParser:
     current_cy = []
     rows = []
     i = 0
-
+    
     for cx,cy,r in centers:
       
       # if the circle belongs to the current row
-      if len(current_cy) == 0 or (cy <= np.mean(current_cy) + avg_circle_radii):
+      if (len(current_cy) == 0) or (cy <= np.mean(current_cy) + avg_circle_radii):
         current_row.append([cx-r,cy-r,2*r,2*r]) # convert the circle to bb (x,y,w,h)
         current_cy.append(cy)
       else:
-        rows.append(sorted(current_row,key= lambda bb: bb[0])) # when end of row is reached, insert the row sorted from left right
-        current_row = [[cx-r,cy-r,2*r,2*r]]
-        current_cy = [cy]
+        current_row = sorted(current_row,key= lambda bb: bb[0])
+        #print(current_row[0][0],int(current_row[0][0] <= scanned.shape[1]/2) ,end='\n============================================\n')
+        # current_row = sorted(current_row,key= lambda bb: bb[0])
+        # print(current_row)
+        if current_row[0][0] <= int(scanned.shape[1]/2):
+          rows.append(current_row) # when end of row is reached, insert the row sorted from left right
+          current_row = [[cx-r,cy-r,2*r,2*r]]
+          current_cy = [cy]
+        else:
+          current_row = [[cx-r,cy-r,2*r,2*r]]
+          current_cy = [cy]
 
       i+=1
 
-      if i == len(centers):
+      if i == len(centers) and len(current_row) > 0:
         rows.append(sorted(current_row,key= lambda bb: bb[0]))
 
-
     rows = np.array(rows,dtype=object)
-
     # Get the number of circles in each row
     rows_cirecles_num = np.array([len(row) for row in rows])
     # If circles in row is greater than the minimum number of circles (the number of choices in question), then it is a correct row
@@ -197,18 +206,19 @@ class BubbleParser:
 
     # Calculate the last y value for id rows
     id_last_y = id_rows[-1,-1,1] + id_rows[-1,-1,-1] + self.ROW_Y_ALLOWANCE
-    
     # Get the first asnwers row
     first_answer_i = self.ID_DIGITS_NUM
     for i in range(self.ID_DIGITS_NUM,len(rows)):
       if rows[i][0][1] > id_last_y:
         first_answer_i = i
         break
-
     answer_rows = rows[first_answer_i:]
+    #print(rows_cirecles_num)
     rows_cirecles_num = rows_cirecles_num[first_answer_i:]
+    #print(rows_cirecles_num)
     # Remove overlapped circles
-    answer_rows = [self.remove_overlapped_bbs(row) for row in answer_rows]
+    #print([len(row) for row in answer_rows])
+    answer_rows = [self.remove_overlapped_bbs(row) if len(row)%self.CHOICES_NUM != 0 else row for row in answer_rows]
     # Get the number of circles in each row
     rows_cirecles_num = np.array([len(row) for row in answer_rows])
     # Get the rows that have wrong number of circles (every row should has circle number divisible by number of choices in question)
@@ -229,7 +239,9 @@ class BubbleParser:
       for i in range(len(row)):
         avgs_list[i].append(row[i])
     
-
+    #print(np.sum(answers_wrong_rows_mask))
+    #print(np.where(answers_wrong_rows_mask)[0])
+    #print(len(answer_rows))
     avg_cols_x_start = [np.mean(col) for col in avgs_list]
     # Removing noisy bounding boxes by excluding the k largest differences from the closest column  (x value of bb - x value of the closest column) 
     for i in np.where(answers_wrong_rows_mask)[0]:
@@ -238,7 +250,7 @@ class BubbleParser:
       best_inds = np.argpartition([np.min(np.abs(x - avg_cols_x_start)) for x  in bbs[:,0]],target_length)[:target_length]
       best_inds = sorted(best_inds)
       answer_rows[i]= bbs[best_inds]
-    
+    #print(len(answer_rows))
     return id_rows,answer_rows
 
   def arrange_asnwers(self,rows,a,col=0):
@@ -265,16 +277,34 @@ class BubbleParser:
       bubble_area_ratios.append([np.sum(thresh[bb[1]+int(bb[3]/4):bb[1]+int(0.75*bb[3]),bb[0]+int(bb[2]/4):bb[0]+int(0.75*bb[2])])/(0.25*bb[2]*bb[3]) for bb in row])
 
     ID = ''
+    
     bubble_area_ratios = np.array(bubble_area_ratios)
-    detected_bubbles = np.sum(bubble_area_ratios >= self.ANSWER_AREA_RATIO)
-    if detected_bubbles > self.ID_DIGITS_NUM:
+    max_inds =  []
+    for row in bubble_area_ratios:
+      mask = row >= self.ID_AREA_RATIO
+      possible_answers = row[mask]
+      if len(possible_answers) > 1:
+        for i in range(0,len(possible_answers)-1):
+          kth_largest_inds = np.argpartition(possible_answers,-1*(i+2))[-1*(i+2):]
+          current_partition = possible_answers[kth_largest_inds]
+          if np.max(current_partition) - np.min(current_partition) >= self.NOT_MULTI_MARGIN:
+            
+            max_inds.append(np.argpartition(row,-1*(i+1))[-1*(i+1):] if (i+1) > 1 else np.argmax(row))
+            break
+      else:
+        max_inds.append(np.argmax(row))
+    #print(bubble_area_ratios)
+    #print(max_inds,end='\n==============================\n')
+    if len(max_inds) < self.ID_DIGITS_NUM:
+      ID = 'COULD NOT DETECT'    
+    elif len(max_inds) > self.ID_DIGITS_NUM or np.max([len(i) if isinstance(i,np.ndarray) else 1  for i in max_inds]) > 1:
       ID = 'COULD NOT DETECT'
-    elif detected_bubbles < self.ID_DIGITS_NUM:
-      ID = 'NOT FILLED'
     else:
       max_inds = np.argmax(bubble_area_ratios,axis=1).astype(str)
       ID = ''.join(max_inds)
-    
+
+
+      ID = ''.join(max_inds)
 
     answers = []
     answers_mapper = {i:chr(ord('A') + i) for i in range(self.CHOICES_NUM)}
@@ -290,7 +320,7 @@ class BubbleParser:
       else:
         answers.append('NOT ANSWERED')
 
-
+#np.argpartition([np.min(np.abs(x - avg_cols_x_start)) for x  in bbs[:,0]],target_length)[:target_length]
     return ID,answers
   
   def extract(self,img,edged):
@@ -300,10 +330,7 @@ class BubbleParser:
     detected_bubbles = self.detect_circles(img,edged)
     # Sort bubbles to id_rows and answer_rows
     # and Extract ID and answers in the paper
-    id_rows,answer_rows = self.circles_to_bbs(detected_bubbles)
-    
+    id_rows,answer_rows = self.circles_to_bbs(detected_bubbles,img)
     # arrange answer rows to be in the form 1..k where k is the number of questions
     answer_rows = self.arrange_answers_wrapper(answer_rows)
-   
-    
     return self.extract_filled(thresh,id_rows,answer_rows)
