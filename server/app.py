@@ -99,7 +99,7 @@ def grade_sheets():
         symbolsCols=json.loads(data["symbolsCols"])
         now = datetime.now().isoformat().replace(".","").replace("-","").replace(":","")
         output_csv_path=app.config['UPLOAD_FOLDER']+now+".xlsx"
-        pipeLine.grade_sheet_pipeline(app.config['UPLOAD_FOLDER']+ filename,output_csv_path)
+        pipeLine.grade_sheet_pipeline(app.config['UPLOAD_FOLDER']+ filename,output_csv_path)#,digitsCols,colsToDrop,symbolsCols)
         resp = jsonify({'excelFile' : request.base_url.replace("grades","")+output_csv_path})
         resp.status_code = 201
         return resp
