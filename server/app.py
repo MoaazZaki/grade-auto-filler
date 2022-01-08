@@ -91,6 +91,12 @@ def savePhotos(request,functionOnSuccess,folder=""):
 @cross_origin()
 def grade_sheets():
     def sendCSV(filename):
+        data=request.form
+        
+        #TODO: use the following variables to make the
+        colsToDrop=json.loads(data["colsToDrop"])
+        digitsCols=json.loads(data["digitsCols"])
+        symbolsCols=json.loads(data["symbolsCols"])
         now = datetime.now().isoformat().replace(".","").replace("-","").replace(":","")
         output_csv_path=app.config['UPLOAD_FOLDER']+now+".xlsx"
         pipeLine.grade_sheet_pipeline(app.config['UPLOAD_FOLDER']+ filename,output_csv_path)

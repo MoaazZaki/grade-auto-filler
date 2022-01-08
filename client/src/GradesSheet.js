@@ -1,5 +1,14 @@
 import { Done, Download, PictureAsPdf } from "@mui/icons-material";
-import { Button, CircularProgress, Typography } from "@mui/material";
+import {
+  Button,
+  CircularProgress,
+  Container,
+  InputLabel,
+  MenuItem,
+  OutlinedInput,
+  Select,
+  Typography,
+} from "@mui/material";
 import { Box } from "@mui/system";
 import axios from "axios";
 import React, { useState } from "react";
@@ -20,12 +29,20 @@ export default function GradesSheet() {
   const [csvURL, setCsvURL] = useState(null);
   const [percentCompleted, setPercentCompleted] = useState(null);
   const [openAlert, setOpenAlert] = React.useState(false);
+
+  const [columnsToDrop, setColumnsToDrop] = React.useState([1, 2]);
+  const [symbolsCols, setSymbolsCols] = React.useState([4, 5]);
+  const [digitsCols, setDigitsCols] = React.useState([3]);
   return (
     <div>
       <Typography py={2} color="GrayText">
         <Button
           onClick={() => {
-            window.open(`${process.env.REACT_APP_BASE_URL}/static/uploads/template.pdf`, '_blank', 'noopener,noreferrer');
+            window.open(
+              `${process.env.REACT_APP_BASE_URL}/static/uploads/template.pdf`,
+              "_blank",
+              "noopener,noreferrer"
+            );
           }}
           color="error"
           startIcon={<PictureAsPdf />}
@@ -39,6 +56,88 @@ export default function GradesSheet() {
         >
           Grades sheet template
         </Button>
+        <Container maxWidth="sm">
+          <InputLabel id="cols-to-drop">Columns to drop</InputLabel>
+          <Select
+            sx={{ marginBlockEnd: "16px" }}
+            variant="standard"
+            fullWidth
+            id="cols-to-drop"
+            multiple
+            value={columnsToDrop}
+            onChange={(event) => {
+              const {
+                target: { value },
+              } = event;
+              setColumnsToDrop(
+                // On autofill we get a stringified value.
+                typeof value === "string" ? value.split(",") : value
+              );
+            }}
+
+            // MenuProps={MenuProps}
+          >
+            {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((col) => (
+              <MenuItem key={col} value={col}>
+                {col + 1}
+              </MenuItem>
+            ))}
+          </Select>
+
+          <InputLabel id="digits-col">Digits columns</InputLabel>
+          <Select
+            sx={{ marginBlockEnd: "16px" }}
+            variant="standard"
+            fullWidth
+            id="digits-col"
+            multiple
+            value={digitsCols}
+            onChange={(event) => {
+              const {
+                target: { value },
+              } = event;
+              setDigitsCols(
+                // On autofill we get a stringified value.
+                typeof value === "string" ? value.split(",") : value
+              );
+            }}
+
+            // MenuProps={MenuProps}
+          >
+            {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((col) => (
+              <MenuItem key={col} value={col}>
+                {col + 1}
+              </MenuItem>
+            ))}
+          </Select>
+
+          <InputLabel id="symblos-cols">Symbols columns</InputLabel>
+          <Select
+            sx={{ marginBlockEnd: "16px" }}
+            variant="standard"
+            fullWidth
+            id="symblos-cols"
+            multiple
+            value={symbolsCols}
+            onChange={(event) => {
+              const {
+                target: { value },
+              } = event;
+              setSymbolsCols(
+                // On autofill we get a stringified value.
+                typeof value === "string" ? value.split(",") : value
+              );
+            }}
+
+            // MenuProps={MenuProps}
+          >
+            {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((col) => (
+              <MenuItem key={col} value={col}>
+                {col + 1}
+              </MenuItem>
+            ))}
+          </Select>
+        </Container>
         {Boolean(imageState.imageUploaded)
           ? "Thank you for uploading!"
           : "Please upload the sheet you want to grade"}
@@ -60,6 +159,9 @@ export default function GradesSheet() {
                 let res = null;
                 var formData = new FormData();
                 formData.append("files[]", imageFile);
+                formData.append("colsToDrop", JSON.stringify(columnsToDrop));
+                formData.append("digitsCols", JSON.stringify(digitsCols));
+                formData.append("symbolsCols", JSON.stringify(symbolsCols));
                 try {
                   console.log("hello");
                   setCsvURL(null);
@@ -129,7 +231,7 @@ export default function GradesSheet() {
             color="success"
             variant="outlined"
             onClick={() => {
-              window.open(csvURL, '_blank', 'noopener,noreferrer');
+              window.open(csvURL, "_blank", "noopener,noreferrer");
             }}
             endIcon={<Download />}
           >
