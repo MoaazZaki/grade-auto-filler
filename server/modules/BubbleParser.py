@@ -141,7 +141,6 @@ class BubbleParser:
 
 
   def circles_to_bbs(self,detected_circles,scanned):
-    #plt.show()
     # Function to check if value is in range [b1,b2]
     check_in_range = lambda value,b1,b2: value >= b1 and value <= b2
 
@@ -151,7 +150,6 @@ class BubbleParser:
 
     # Calculate average circles radius
     avg_circle_radii = centers[:,2].mean()
-    #print(avg_circle_radii)
     current_row = []
     current_cy = []
     rows = []
@@ -165,9 +163,6 @@ class BubbleParser:
         current_cy.append(cy)
       else:
         current_row = sorted(current_row,key= lambda bb: bb[0])
-        #print(current_row[0][0],int(current_row[0][0] <= scanned.shape[1]/2) ,end='\n============================================\n')
-        # current_row = sorted(current_row,key= lambda bb: bb[0])
-        # print(current_row)
         if current_row[0][0] <= int(scanned.shape[1]/2):
           rows.append(current_row) # when end of row is reached, insert the row sorted from left right
           current_row = [[cx-r,cy-r,2*r,2*r]]
@@ -213,11 +208,8 @@ class BubbleParser:
         first_answer_i = i
         break
     answer_rows = rows[first_answer_i:]
-    #print(rows_cirecles_num)
     rows_cirecles_num = rows_cirecles_num[first_answer_i:]
-    #print(rows_cirecles_num)
     # Remove overlapped circles
-    #print([len(row) for row in answer_rows])
     answer_rows = [self.remove_overlapped_bbs(row) if len(row)%self.CHOICES_NUM != 0 else row for row in answer_rows]
     # Get the number of circles in each row
     rows_cirecles_num = np.array([len(row) for row in answer_rows])
@@ -239,9 +231,6 @@ class BubbleParser:
       for i in range(len(row)):
         avgs_list[i].append(row[i])
     
-    #print(np.sum(answers_wrong_rows_mask))
-    #print(np.where(answers_wrong_rows_mask)[0])
-    #print(len(answer_rows))
     avg_cols_x_start = [np.mean(col) for col in avgs_list]
     # Removing noisy bounding boxes by excluding the k largest differences from the closest column  (x value of bb - x value of the closest column) 
     for i in np.where(answers_wrong_rows_mask)[0]:
@@ -250,7 +239,6 @@ class BubbleParser:
       best_inds = np.argpartition([np.min(np.abs(x - avg_cols_x_start)) for x  in bbs[:,0]],target_length)[:target_length]
       best_inds = sorted(best_inds)
       answer_rows[i]= bbs[best_inds]
-    #print(len(answer_rows))
     return id_rows,answer_rows
 
   def arrange_asnwers(self,rows,a,col=0):
@@ -293,8 +281,6 @@ class BubbleParser:
             break
       else:
         max_inds.append(np.argmax(row))
-    #print(bubble_area_ratios)
-    #print(max_inds,end='\n==============================\n')
     if len(max_inds) < self.ID_DIGITS_NUM:
       ID = 'COULD NOT DETECT'    
     elif len(max_inds) > self.ID_DIGITS_NUM or np.max([len(i) if isinstance(i,np.ndarray) else 1  for i in max_inds]) > 1:
@@ -320,7 +306,6 @@ class BubbleParser:
       else:
         answers.append('NOT ANSWERED')
 
-#np.argpartition([np.min(np.abs(x - avg_cols_x_start)) for x  in bbs[:,0]],target_length)[:target_length]
     return ID,answers
   
   def extract(self,img,edged):

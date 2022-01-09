@@ -80,10 +80,6 @@ class CellDetector:
           lower,upper = bound[0],bound[1]
           
           while True:
-            # print('row:',len(row))
-            # print('bound:',row[i][bounds_critertion])
-            # print('lower-upper:', lower,upper)
-            # print('CHECK:',indecies)
             # Check if the current cell meets bounds
             if row[i][bounds_critertion] <= upper and row[i][bounds_critertion] >= lower and i not in indecies:
               indecies.append(i)
@@ -143,18 +139,12 @@ class CellDetector:
       contours, boundingBoxes = self._sort_contours(contours)
 
       # Filtering the noise lines
-      #upper_h,lower_h = self._get_outlier_bounds(boundingBoxes[:,-1])
       upper_h,lower_h = 500,20
       upper_w = 1000
       mask = ((boundingBoxes[:,-1]<=upper_h) & (boundingBoxes[:,-1]>=lower_h)) & ( boundingBoxes[:,-2]< upper_w)
       boundingBoxes = boundingBoxes[mask]
       contours = contours[mask]
       
-      # vis_img= np.ones_like(self.img)
-      # cv2.drawContours(vis_img, contours, -1, (0, 255, 0), 15)
-      # plt.figure(figsize=(15,15))
-      # plt.imshow(vis_img)
-
       mean = np.mean(boundingBoxes[:,-1])
       #Creating two lists to define row and column in which cell is located
       row=[]
@@ -190,19 +180,16 @@ class CellDetector:
       columns_per_row = np.array(columns_per_row)
       row = np.array(row,dtype=object)
       columns_number = mode(columns_per_row)[0][0]
-      #print('columns_number= ',columns_number)
+
       # Filtering The correct rows
       wrong_rows_mask = columns_per_row != columns_number
       correct_rows = np.array(list(row[~wrong_rows_mask]))
 
-      #print(len(row),len(correct_rows),columns_number)
-      #raise Exception('meooooooow :c')
 
       if np.sum(wrong_rows_mask) != 0:
         # Getting width bounds for each column
         columns_bounds = np.array([ self._get_outlier_bounds(correct_rows[:,j,-2]) for j in range(correct_rows.shape[1])])
-        #print(columns_bounds)
-        #raise Exception('meooooooow :c')
+
         # Correct and append wrong rows
         correct_rows = np.vstack([correct_rows,np.array(self._correct_rows(list(row[wrong_rows_mask]),columns_bounds))])
 

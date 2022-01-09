@@ -42,26 +42,3 @@ class classifier:
         elif method.upper() == 'OCR':
             pass
 
-
-# img = cv2.imread('datasets/digits/2.jpg')
-# gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
-# blur = cv2.GaussianBlur(gray,(5,5),0)
-# _,thresh =  cv2.threshold(blur, 150, 255,cv2.THRESH_BINARY_INV)
-
-# # find contours in the thresholded image, then initialize the
-# # digit contours lists
-# cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
-# cnts = imutils.grab_contours(cnts)
-# digit_bb = []
-# # loop over the digit area candidates
-# for c in cnts:
-# 	# compute the bounding box of the contour
-# 	(x, y, w, h) = cv2.boundingRect(c)
-# 	# if the contour is sufficiently large, it must be a digit
-# 	if w >= 50 and (h >= 100 and h <= 800):
-# 		digit_bb.append([x, y, w, h])
-
-# digits = []
-# for bb in digit_bb:
-#     x,y,w,h = bb
-#     digits.append(gray[y:y+h,x:x+w])

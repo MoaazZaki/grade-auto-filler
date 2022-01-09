@@ -5,7 +5,7 @@ from modules.Scanner import Scanner
 import numpy as np
 from utils.helpers import (generate_bubble_sheet,to_pdf)
 #img = cv2.imread('datasets/MCQ/3.jpg')
-pipeLine.grade_sheet_pipeline('../../gradesheet-20220106T190105Z-001/gradesheet/6.jpg','../output/2.xlsx')
+pipeLine.grade_sheet_pipeline('../../gradesheet-20220106T190105Z-001/gradesheet/6.JPG','../output/2.xlsx')
 # sc = Scanner(img)
 # scanned = sc.trnasform()
 # plt.figure()

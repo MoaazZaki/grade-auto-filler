@@ -97,6 +97,7 @@ class Scanner:
         return rect_pts
 
     def get_dst_pts(self,rect):
+        ##############->>>>>>>>>>>>>.
         (tl, tr, br, bl) = rect
 
         widthA = np.sqrt(((br[0] - bl[0]) ** 2) + ((br[1] - bl[1]) ** 2))

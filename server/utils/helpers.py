@@ -47,10 +47,8 @@ def show_images(images,titles=None):
 
 # cells_image= image returned from the CellDetector, finalboxes= cells,output_path=path of the csv file
 def output_csv(original,cells_image,finalboxes,output_path,id_col=0,number_cols=[3],symbol_cols=[4],cols_to_drop=[]): 
-    #enhance = lambda img: cv2.erode(cv2.dilate(cv2.resize(cv2.copyMakeBorder(img,2,2,2,2, cv2.BORDER_CONSTANT,value=[255,255]), None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC), cv2.getStructuringElement(cv2.MORPH_RECT, (2, 1)),iterations=1), cv2.getStructuringElement(cv2.MORPH_RECT, (2, 1)),iterations=2)
     enhance2 = lambda img: cv2.resize(cv2.copyMakeBorder(cv2.adaptiveThreshold(cv2.cvtColor(img, cv2.COLOR_BGR2GRAY),255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY, 21, 18),4,4,4,4, cv2.BORDER_CONSTANT,value=255), None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
     enhance3 = lambda img: cv2.copyMakeBorder(cv2.threshold(cv2.resize(cv2.copyMakeBorder(cv2.adaptiveThreshold(cv2.cvtColor(img, cv2.COLOR_BGR2GRAY),255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY, 51, 10),4,4,4,4, cv2.BORDER_CONSTANT,value=255), None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC),0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)[1][15:-14,15:-14],5,5,5,5, cv2.BORDER_CONSTANT,value=255)#cv2.erode(cv2.dilate(, cv2.getStructuringElement(cv2.MORPH_RECT, (1, 3)),iterations=2)
-    #enhance2 = lambda img: cv2.threshold((cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)),0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)[1]
 
     table = np.empty_like(finalboxes[:,:,0],dtype=object)
     # ID COL
@@ -100,7 +98,6 @@ def removeShadow(img):
         norm_img = cv2.normalize(diff_img,None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8UC1)
         result_planes.append(diff_img)
         result_norm_planes.append(norm_img)
-
     result = cv2.merge(result_planes)
     result_norm = cv2.merge(result_norm_planes)
     return result
