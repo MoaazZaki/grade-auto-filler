@@ -32,9 +32,7 @@ def grade_sheet_pipeline(img_path,output_csv_path,numbers_col=[3],cols_to_drop=[
 
 
 def bubble_sheet_pipeline(folder_path,model_answer,answer_grades,ouput_exccel_path,ID_DIGITS_NUM,CHOICES_NUM ,IS_MULTI_ANSWER = True,WRONG_ANSWER_GRADE = 2,ALLOW_NEGATIVE_GRADES=False):
-    
-    #print(folder_path,model_answer,answer_grades,ouput_exccel_path,ID_DIGITS_NUM,CHOICES_NUM ,IS_MULTI_ANSWER ,WRONG_ANSWER_GRADE ,ALLOW_NEGATIVE_GRADES)
-    
+        
     CANNY_L_THRESH=75
     CANNY_H_THRESH=170
     DILATION_SIZE=(5,5)

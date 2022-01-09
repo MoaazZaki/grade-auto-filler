@@ -93,13 +93,12 @@ def grade_sheets():
     def sendCSV(filename):
         data=request.form
         
-        #TODO: use the following variables to make the
         colsToDrop=json.loads(data["colsToDrop"])
         digitsCols=json.loads(data["digitsCols"])
         symbolsCols=json.loads(data["symbolsCols"])
         now = datetime.now().isoformat().replace(".","").replace("-","").replace(":","")
         output_csv_path=app.config['UPLOAD_FOLDER']+now+".xlsx"
-        pipeLine.grade_sheet_pipeline(app.config['UPLOAD_FOLDER']+ filename,output_csv_path)#,digitsCols,colsToDrop,symbolsCols)
+        pipeLine.grade_sheet_pipeline(app.config['UPLOAD_FOLDER']+ filename,output_csv_path,digitsCols,colsToDrop,symbolsCols)
         resp = jsonify({'excelFile' : request.base_url.replace("grades","")+output_csv_path})
         resp.status_code = 201
         return resp
@@ -118,7 +117,6 @@ def generate_bubble_sheet():
     pathToImage=app.config['UPLOAD_FOLDER'] #TODO: change this to a subfolder if you wish
     output_pdf_path=pathToImage+pdfName
     hlp.to_pdf(hlp.generate_bubble_sheet('static/assets/MCQ_paper.png',int(data["numberOfIdDigits"]),int(data["numberOfQuestions"]),int(data["numberOfChoices"])),output_pdf_path)
-    #TODO: save the phote in pathToImage with a name of imageName
     resp = jsonify({'paper' : request.base_url.replace("bubble/paper","")+output_pdf_path})
     resp.status_code = 201
     return resp
@@ -136,8 +134,8 @@ def grade_bubble_sheet():
         pipeLine.bubble_sheet_pipeline(app.config['UPLOAD_FOLDER'] + gradesFolder[0:-1],
                                        list(json.loads(data['answers'])), #model answer
                                        json.loads(data["questionsQrades"]), #answer grades
-                                       outputExcelPath, #ouput_exccel_path TODO:CHANGE THIS
-                                       int(data["numberOfIdDigits"]) ,#ID TODO:Change this
+                                       outputExcelPath, 
+                                       int(data["numberOfIdDigits"]) , 
                                        int(data["numberOfChoices"]),
                                        True if data["allowMultiAnswers"]=="true" else False ,
                                        float(data["wrongAnswerGrade"]),

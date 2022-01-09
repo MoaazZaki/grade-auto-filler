@@ -19,7 +19,6 @@ hw_model = HandwrittenDetector.classifier()
 
 
 from re import sub
-#pytesseract.pytesseract.tesseract_cmd = "C:\Program Files (x86)\Tesseract-OCR\\tesseract.exe" 
 
 def show_images(images,titles=None):
     #This function is used to show image(s) with titles by sending an array of images and an array of associated titles.
@@ -37,13 +36,7 @@ def show_images(images,titles=None):
         a.set_title(title)
         n += 1
     fig.set_size_inches(np.array(fig.get_size_inches()) * n_ims)
-    
 
-# def change_cell_background(x,value='?',color='red'):
-#     color = 'background-color: {}'.format(color)
-#     df1 = pd.DataFrame('', index=x.index, columns=x.columns)
-#     df1[x==value] = color
-#     return df1
 
 # cells_image= image returned from the CellDetector, finalboxes= cells,output_path=path of the csv file
 def output_csv(original,cells_image,finalboxes,output_path,id_col=0,number_cols=[3],symbol_cols=[4],cols_to_drop=[]): 
@@ -53,10 +46,8 @@ def output_csv(original,cells_image,finalboxes,output_path,id_col=0,number_cols=
     table = np.empty_like(finalboxes[:,:,0],dtype=object)
     # ID COL
     options = "outputbase digits"
-    #cv2.imwrite('static/temp/cells.png',cells_image)
     for i,bb in enumerate(finalboxes[:,id_col]):
         pp_img = enhance2(original[bb[1]:bb[1]+bb[3],bb[0]:bb[0]+bb[2]])
-        #cv2.imwrite('static/temp/id{}.png'.format(i),pp_img)
         out =pytesseract.image_to_string(pp_img,config=options)
         out = sub('\D', '', out)
         table[0+i,id_col] =  out
@@ -64,18 +55,13 @@ def output_csv(original,cells_image,finalboxes,output_path,id_col=0,number_cols=
     # HAND-WRITTEN NUMBERS COL
     for col in number_cols:
         bbs = finalboxes[:,col]
-        #[cv2.imwrite('static/temp/col{}digit{}.png'.format(col,i),cells_image[bb[1]:bb[1]+bb[3],bb[0]:bb[0]+bb[2]]) for i,bb in enumerate(bbs)]
         table[0:,col] = hw_model.predict([cells_image[bb[1]:bb[1]+bb[3],bb[0]:bb[0]+bb[2]] for bb in bbs])
 
     # SYMBOL COLS
     class_to_symbol = lambda symbol,count: '5' if symbol == 'tick' else '?' if symbol == 'question_mark' else str(count) if symbol == 'v_line' else str(5-count) if symbol == 'h_line' else '0' if symbol == 'rect' else ' '
     for col in symbol_cols:
         bbs = finalboxes[:,col]
-        #[cv2.imwrite('static/temp/col{}_symbol{}.png'.format(col,i),enhance3(original[bb[1]:bb[1]+bb[3],bb[0]:bb[0]+bb[2]])) for i,bb in enumerate(bbs)]
-        #print(SymbolDetector.classify_symbol(enhance3(original[bbs[0][1]:bbs[0][1]+bbs[0][3],bbs[0][0]:bbs[0][0]+bbs[0][2]])))
-        #raise Exception("meooooooow :'c")
         out = [SymbolDetector.classify_symbol(enhance3(original[bb[1]:bb[1]+bb[3],bb[0]:bb[0]+bb[2]])) for bb in bbs]
-        #print(out)
         out = [class_to_symbol(*o) for o in out]
         table[:,col] = out
 

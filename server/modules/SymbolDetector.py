@@ -12,13 +12,8 @@ import matplotlib.pyplot as plt
   
   
   
-def classify_symbol(symbol,  LINE_DISTANCE_THRESHOLD = 15,  LINE_ANGLE_THRESHOLD = 30,LINE_ANGLE_ALLOWANCE = 35,RECTANLE_BB_RATIO_ALLOWANCE = 0.4,TICK_MAX_AREA = 0.5,TICK_MIN_DISTANCE = 10,TICK_ANGLE_ALLOWANCE = 25):
+def classify_symbol(symbol,  LINE_DISTANCE_THRESHOLD = 15,  LINE_ANGLE_THRESHOLD = 30,LINE_ANGLE_ALLOWANCE = 35,RECTANLE_BB_RATIO_ALLOWANCE = 0.4,TICK_MAX_AREA = 0.5,TICK_MIN_DISTANCE = 5,TICK_ANGLE_ALLOWANCE = 40):
   detect_value = lambda inp,value,allowance: inp >= value-allowance and inp <= value+allowance 
-
- # print(symbol.shape)
-  # gray = cv2.cvtColor(symbol,cv2.COLOR_BGR2GRAY)
-  #symbol = cv2.GaussianBlur(symbol,(5,5),0)
-  # _,symbol =  cv2.threshold(blur, 150, 255,cv2.THRESH_BINARY_INV)
 
   # find contours in the thresholded image, then initialize the
   # symbol contours lists
@@ -27,9 +22,7 @@ def classify_symbol(symbol,  LINE_DISTANCE_THRESHOLD = 15,  LINE_ANGLE_THRESHOLD
   if len(cnts) == 0:
     return 'empty',0 
 
-  # cnts = cv2.findContours(symbol.copy(), cv2.RETR_LIST,cv2.CHAIN_APPROX_SIMPLE)
-  # #print(cnts)
-  # cnts = imutils.grab_contours(cnts)[1:]
+
   
   vertical_angles = 0
   horizontal_angles = 0
@@ -40,9 +33,7 @@ def classify_symbol(symbol,  LINE_DISTANCE_THRESHOLD = 15,  LINE_ANGLE_THRESHOLD
   vertical_bb = 0
   elipses = 0
   points = 0
-  #cv2.imwrite('static/temp/debug_symbol.png',symbol)
   roi_cnts = 0
-  #print('cnts:',len(cnts))
   # loop over the symbol area candidates
   for i,c in enumerate(cnts):
     # compute the bounding box of the contour
@@ -81,6 +72,7 @@ def classify_symbol(symbol,  LINE_DISTANCE_THRESHOLD = 15,  LINE_ANGLE_THRESHOLD
         if np.sum(dists>= TICK_MIN_DISTANCE) >= 1 :
           tick_index = np.argmax(dists)
           tick_angles += 1 if detect_value(180*angles[tick_index]/np.pi,45,TICK_ANGLE_ALLOWANCE) else 0
+          tick_angles += 1 if detect_value(180*angles[tick_index]/np.pi,-45,TICK_ANGLE_ALLOWANCE) else 0
           tick_distances += 1 if dists[tick_index] >= TICK_MIN_DISTANCE else 0
         try:
           elipses += len(hough_ellipse(edged_symbol_part, accuracy=20, threshold=80,min_size=0, max_size=20))
